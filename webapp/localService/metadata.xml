@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="1.0" xmlns:edmx="http://schemas.microsoft.com/ado/2007/06/edmx" xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata" xmlns:sap="http://www.sap.com/Protocols/SAPData">
+    <edmx:DataServices m:DataServiceVersion="2.0">
+        <Schema Namespace="ChargeAppService" xmlns="http://schemas.microsoft.com/ado/2008/09/edm">
+            <EntityContainer Name="EntityContainer" m:IsDefaultEntityContainer="true">
+                <EntitySet Name="Bafs" EntityType="ChargeAppService.Bafs"/>
+                <EntitySet Name="STORE_BAF_BATCH_DAY" EntityType="ChargeAppService.STORE_BAF_BATCH_DAY"/>
+                <EntitySet Name="Stores" EntityType="ChargeAppService.Stores"/>
+                <AssociationSet Name="Stores_BafID" Association="ChargeAppService.Stores_BafID">
+                    <End Role="Stores" EntitySet="Stores"/>
+                    <End Role="Bafs" EntitySet="Bafs"/>
+                </AssociationSet>
+            </EntityContainer>
+            <EntityType Name="Bafs">
+                <Key>
+                    <PropertyRef Name="ID"/>
+                </Key>
+                <Property Name="ID" Type="Edm.Guid" Nullable="false"/>
+                <Property Name="BafID" Type="Edm.String" MaxLength="4"/>
+                <Property Name="BafDescription" Type="Edm.String" MaxLength="30"/>
+                <NavigationProperty Name="Store" Relationship="ChargeAppService.Stores_BafID" FromRole="Bafs" ToRole="Stores"/>
+            </EntityType>
+            <EntityType Name="STORE_BAF_BATCH_DAY">
+                <Key>
+                    <PropertyRef Name="ID"/>
+                </Key>
+                <Property Name="ID" Type="Edm.Guid" Nullable="false"/>
+                <Property Name="StoreID" Type="Edm.String" MaxLength="4"/>
+                <Property Name="BafID" Type="Edm.String" MaxLength="4"/>
+                <Property Name="BatchID" Type="Edm.Int32"/>
+                <Property Name="Active_Monday" Type="Edm.Boolean"/>
+                <Property Name="Time_Monday" Type="Edm.Time"/>
+                <Property Name="Active_Tuesday" Type="Edm.Boolean"/>
+                <Property Name="Time_Tuesday" Type="Edm.Time"/>
+                <Property Name="Active_Wednesday" Type="Edm.Boolean"/>
+                <Property Name="Time_Wednesday" Type="Edm.Time"/>
+                <Property Name="Active_Thursday" Type="Edm.Boolean"/>
+                <Property Name="Time_Thursday" Type="Edm.Time"/>
+                <Property Name="Active_Friday" Type="Edm.Boolean"/>
+                <Property Name="Time_Friday" Type="Edm.Time"/>
+                <Property Name="Active_Saturday" Type="Edm.Boolean"/>
+                <Property Name="Time_Saturday" Type="Edm.Time"/>
+                <Property Name="Active_Sunday" Type="Edm.Boolean"/>
+                <Property Name="Time_Sunday" Type="Edm.Time"/>
+            </EntityType>
+            <EntityType Name="Stores">
+                <Key>
+                    <PropertyRef Name="ID"/>
+                </Key>
+                <Property Name="ID" Type="Edm.Guid" Nullable="false"/>
+                <Property Name="StoreID" Type="Edm.String" MaxLength="4"/>
+                <Property Name="StoreType" Type="Edm.String" MaxLength="5"/>
+                <Property Name="StoreName" Type="Edm.String" MaxLength="30"/>
+                <NavigationProperty Name="BafID" Relationship="ChargeAppService.Stores_BafID" FromRole="Stores" ToRole="Bafs"/>
+                <Property Name="BafID_ID" Type="Edm.Guid"/>
+            </EntityType>
+            <Association Name="Stores_BafID">
+                <End Role="Stores" Type="ChargeAppService.Stores" Multiplicity="*"/>
+                <End Role="Bafs" Type="ChargeAppService.Bafs" Multiplicity="0..1"/>
+                <ReferentialConstraint>
+                    <Principal Role="Bafs">
+                        <PropertyRef Name="ID"/>
+                    </Principal>
+                    <Dependent Role="Stores">
+                        <PropertyRef Name="BafID_ID"/>
+                    </Dependent>
+                </ReferentialConstraint>
+            </Association>
+        </Schema>
+    </edmx:DataServices>
+</edmx:Edmx>

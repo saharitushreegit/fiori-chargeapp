@@ -1,0 +1,18 @@
+_schema-version: "3.2"
+ID: com-sap-fiorichargeapp
+description: A Fiori application.
+version: 0.0.1
+modules:
+- name: comsapfiorichargeapp
+  type: html5
+  path: .
+  build-parameters:
+    build-result: dist
+    builder: custom
+    commands:
+    - npm install
+    - npm run build:cf
+    supported-platforms: []
+parameters:
+  deploy_mode: html5-repo
+  enable-parallel-deployments: true
