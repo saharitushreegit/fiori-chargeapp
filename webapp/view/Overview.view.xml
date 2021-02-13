@@ -22,31 +22,113 @@
 			</Bar>
         </customHeader>
         <l:VerticalLayout width="100%">
-		    <fb:FilterBar reset="onReset" search="onSearch" showRestoreButton="true" showClearButton="true">
+		    <fb:FilterBar reset="onReset" search="handleOnSearch" showRestoreButton="true" showClearButton="true">
             <fb:filterGroupItems>    
                     <fb:FilterGroupItem groupName="__$INTERNAL$" name="Stores" label="Stores" labelTooltip="Tooltip Example" mandatory="true" partOfCurrentVariant="true" visibleInFilterBar="true">
                         <fb:control>
-                            <!--ComboBox type="Text">
-                                <items>
-                                    <core:Item key="1001" text="Pelt"/>
-                                    <core:Item key="1002" text="Raalte"/>
-                                </items>
-                            </ComboBox -->
-                             <ComboBox items="{ path:'/Stores', sorter: { path: 'StoreID' } }">
-                                <core:Item key="{StoreID}" text="{StoreName}"/>    
+                            <ComboBox id="cbStore" items="{ path:'LocalModel>/Stores', sorter: { path: 'StoreID' } }" selectionChange="handleStoreChange">
+                                <core:Item key="{LocalModel>StoreID}" text="{LocalModel>StoreName}"/>    
                             </ComboBox>
                         </fb:control>
                     </fb:FilterGroupItem>
                     <fb:FilterGroupItem groupName="__$INTERNAL$" name="Baf" label="Baf" labelTooltip="Tooltip Example" mandatory="true" partOfCurrentVariant="true" visibleInFilterBar="true">
                         <fb:control>
-                             <ComboBox items="{ path:'/Bafs', sorter: { path: 'BafID' } }">
-                                <core:Item key="{BafID}" text="{BafDescription}"/>    
+                             <ComboBox id="cbBaf" items="{ path:'LocalModel>/Bafs', sorter: { path: 'BafID' } }">
+                                <core:Item key="{LocalModel>BafID}" text="{LocalModel>BafDescription}"/>    
                             </ComboBox>
                         </fb:control>
                     </fb:FilterGroupItem>
                 </fb:filterGroupItems>   
             </fb:FilterBar>		
-	    </l:VerticalLayout>
+        </l:VerticalLayout>
+        <Table id="tbCharge" growing="true" growingThreshold="10" items="{path:'LocalModel>/STORE_BAF_BATCH_DAY'}" >
+				<headerToolbar>
+					<OverflowToolbar id="otbSubheader">
+						<Title id="tbHeaderTitle" level="H2" />
+					</OverflowToolbar>
+				</headerToolbar>
+				<columns>
+					<Column width="12em">
+						<Text text="Charge Nr" />
+					</Column>
+					<Column minScreenWidth="Tablet" demandPopin="true" hAlign="Center">
+						<Text text="Mon" />
+					</Column>
+					<Column minScreenWidth="Tablet" demandPopin="true" hAlign="Center">
+						<Text text="Tues" />
+                    </Column>
+                    <Column minScreenWidth="Tablet" demandPopin="true" hAlign="Center">
+						<Text text="Wed" />
+                    </Column>
+                    <Column minScreenWidth="Tablet" demandPopin="true" hAlign="Center">
+						<Text text="Thurs" />
+                    </Column>
+                    <Column minScreenWidth="Tablet" demandPopin="true" hAlign="Center">
+						<Text text="Fri" />
+                    </Column>
+                    <Column minScreenWidth="Tablet" demandPopin="true" hAlign="Center">
+						<Text text="Sat" />
+					</Column>
+					<Column hAlign="Center">
+						<Text text="Sun" />
+					</Column>
+				</columns>
+				<items>
+					<ColumnListItem>
+						<cells>
+							<ObjectStatus
+                                class="sapUiSmallMarginBottom"
+                                text="{LocalModel>BatchID}"
+                                state="None" />
+                            
+                            <Input
+                                class="sapUiSmallMarginBottom"
+                                value="{LocalModel>Time_Monday}"
+                                valueState="{=${LocalModel>Active_Monday} === 1?Success:Error}" 
+                                editable="{LocalModel>Active_Monday}"/>
+                            
+                            <Input
+                                class="sapUiSmallMarginBottom"
+                                value="{LocalModel>Time_Tuesday}"
+                                state="None" 
+                                editable="{LocalModel>Active_Tuesday}"/>
+
+                            <Input
+                                class="sapUiSmallMarginBottom"
+                                value="{LocalModel>Time_Wednesday}"
+                                state="None" 
+                                editable="{LocalModel>Active_Wednesday}"/>
+
+                            <Input
+                                class="sapUiSmallMarginBottom"
+                                value="{LocalModel>Time_Thursday}"
+                                state="None" 
+                                editable="false"/>
+
+                            <Input
+                                class="sapUiSmallMarginBottom"
+                                value="{LocalModel>Time_Friday}"
+                                state="None" 
+                                editable="false"/>
+
+                            <Input
+                                class="sapUiSmallMarginBottom"
+                                value="{LocalModel>Time_Saturday}"
+                                state="None" 
+                                editable="false"/>
+                            <Input
+                                class="sapUiSmallMarginBottom"
+                                value="{LocalModel>Time_Sunday}"
+                                state="None" 
+                                editable="false"/>    
+							
+						</cells>
+					</ColumnListItem>
+				</items>
+            </Table>
+            
+
+           
     </Page>
 
 </App>
