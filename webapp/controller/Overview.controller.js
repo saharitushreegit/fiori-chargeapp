@@ -26,7 +26,7 @@ sap.ui.define([
                 this.getView().setModel(oFilterModel, "LocalModel");  
                 this.loadStores();  
                 this.loadBafs();
-                //this.oReadOnlyTemplate = this.byId("tbCharge").removeItem(0);
+                this.oReadOnlyTemplate = this.byId("tbCharge").getBindingInfo("items").template;//this.byId("tbCharge").removeItem(0);
                 //this.rebindTable(this.oReadOnlyTemplate, "Navigation");
                 this.oEditableTemplate = new ColumnListItem({
                     cells: [
@@ -61,6 +61,9 @@ sap.ui.define([
                         template: oTemplate,
                         templateShareable: true
                     }).setKeyboardMode(sKeyboardMode);
+
+                    this.getView().byId("tbCharge").getBinding("items").filter(this.oFilter);
+                    
                 },
 
                 onEdit: function() {
@@ -68,14 +71,30 @@ sap.ui.define([
                     this.byId("editButton").setVisible(false);
                     this.byId("saveButton").setVisible(true);
                     this.byId("cancelButton").setVisible(true);
-                    this.getView().byId("tbCharge").getBinding("items").filter(this.oFilter);
                     this.rebindTable(this.oEditableTemplate, "Edit");
                 },
 
                 onSave: function() {
+
+                    var oModel = this.getView().getModel();
+                    var oLocalModel = this.getView().getModel("LocalModel");
                     this.byId("saveButton").setVisible(false);
                     this.byId("cancelButton").setVisible(false);
                     this.byId("editButton").setVisible(true);
+
+                    var chargeData = oLocalModel.getProperty("/STORE_BAF_BATCH_DAY");
+
+                   /* oModel.update("/STORE_BAF_BATCH_DAY('" + this.entityId + "')", entityData, {
+                        success: $.proxy(function() {
+                            
+                        }, this),
+                        error: $.proxy(function() {
+                            
+                        }, this)
+                    });*/
+
+
+
                     this.rebindTable(this.oReadOnlyTemplate, "Navigation");
                 },
 
@@ -83,7 +102,7 @@ sap.ui.define([
                     this.byId("cancelButton").setVisible(false);
                     this.byId("saveButton").setVisible(false);
                     this.byId("editButton").setVisible(true);
-                    this.oModel.setProperty("/ProductCollection", this.aProductCollection);
+                    this.getView().getModel("LocalModel").setProperty("/STORE_BAF_BATCH_DAY",this.aProductCollection);
                     this.rebindTable(this.oReadOnlyTemplate, "Navigation");
                 },
 
