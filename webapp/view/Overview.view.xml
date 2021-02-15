@@ -41,7 +41,7 @@
                 </fb:filterGroupItems>   
             </fb:FilterBar>		
         </l:VerticalLayout>
-        <Table id="tbCharge" growing="true" growingThreshold="10" items="{path:'LocalModel>/STORE_BAF_BATCH_DAY'}" >
+        <Table id="tbCharge" growing="true" growingThreshold="10" items="{path:'LocalModel>/STORE_BAF_BATCH_DAY'}" mode="Delete" delete="onChargeDelete">
 				<headerToolbar>
 					<OverflowToolbar id="otbSubheader">
                         <Title id="tbHeaderTitle" level="H2" />
@@ -117,56 +117,10 @@
                                 class="sapUiSmallMarginBottom"
                                 text="{LocalModel>Time_Sunday}"
                                 state="None" />
-                                
-                            
-                            <!--Input
-                                class="sapUiSmallMarginBottom"
-                                value="{LocalModel>Time_Monday}"
-                                valueState="{=${LocalModel>Active_Monday} === 1?Success:Error}" 
-                                editable="{LocalModel>Active_Monday}"/>
-                            
-                            <Input
-                                class="sapUiSmallMarginBottom"
-                                value="{LocalModel>Time_Tuesday}"
-                                state="None" 
-                                editable="{LocalModel>Active_Tuesday}"/>
-
-                            <Input
-                                class="sapUiSmallMarginBottom"
-                                value="{LocalModel>Time_Wednesday}"
-                                state="None" 
-                                editable="{LocalModel>Active_Wednesday}"/>
-
-                            <Input
-                                class="sapUiSmallMarginBottom"
-                                value="{LocalModel>Time_Thursday}"
-                                state="None" 
-                                editable="false"/>
-
-                            <Input
-                                class="sapUiSmallMarginBottom"
-                                value="{LocalModel>Time_Friday}"
-                                state="None" 
-                                editable="false"/>
-
-                            <Input
-                                class="sapUiSmallMarginBottom"
-                                value="{LocalModel>Time_Saturday}"
-                                state="None" 
-                                editable="false"/>
-                            <Input
-                                class="sapUiSmallMarginBottom"
-                                value="{LocalModel>Time_Sunday}"
-                                state="None" 
-                                editable="false"/ -->    
-							
-						</cells>
+                        </cells>
 					</ColumnListItem>
 				</items>
             </Table>
-            
-
-           
     </Page>
 
 </App>
