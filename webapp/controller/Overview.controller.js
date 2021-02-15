@@ -5,12 +5,13 @@ sap.ui.define([
      "sap/ui/model/FilterOperator",
      "sap/m/ColumnListItem",
     "sap/m/Input",
-    "sap/m/ObjectStatus"
+    "sap/m/ObjectStatus",
+    'sap/base/util/deepExtend',
 ],
 	/**
 	 * @param {typeof sap.ui.core.mvc.Controller} Controller
 	 */
-	function (Controller,JSONModel,Filter,FilterOperator,ColumnListItem,Input,ObjectStatus) {
+	function (Controller,JSONModel,Filter,FilterOperator,ColumnListItem,Input,ObjectStatus,deepExtend) {
 		"use strict";
 
 		return Controller.extend("com.sap.fiorichargeapp.controller.Overview", {
@@ -25,26 +26,81 @@ sap.ui.define([
                 this.getView().setModel(oFilterModel, "LocalModel");  
                 this.loadStores();  
                 this.loadBafs();
-
-                
-                
-                this.oRouter.attachRoutePatternMatched(this.onRouteMatched, this);
-            },
-
-            loadStores:function(){
-
-                var oLocalModel = this.getView().getModel("LocalModel");
-                var oModel = this.getView().getModel();
-                
-                oModel.read("/Stores",{
-                    success:$.proxy(function(oData){
-                        oLocalModel.setProperty("/Stores",oData.results);
-                    },this),
-                    failed:$.proxy(function(oError){
+                //this.oReadOnlyTemplate = this.byId("tbCharge").removeItem(0);
+                //this.rebindTable(this.oReadOnlyTemplate, "Navigation");
+                this.oEditableTemplate = new ColumnListItem({
+                    cells: [
+                        new ObjectStatus({
+                            text:"{LocalModel>BatchID}"
+                        }),
+                        new Input({
+                            value: "{LocalModel>Time_Monday}"
+                        }), new Input({
+                            value: "{LocalModel>Time_Tuesday}"
+                        }), new Input({
+                            value: "{LocalModel>Time_Wednesday}"
+                        }), new Input({
+                            value: "{LocalModel>Time_Thursday}"
+                        }), new Input({
+                            value: "{LocalModel>Time_Friday}"
+                        }), new Input({
+                            value: "{LocalModel>Time_Saturday}"
+                        }), new Input({
+                            value: "{LocalModel>Time_Sunday}"
+                        })
+                    ]
+                });    
                     
-                    },this)
+                    
+                    this.oRouter.attachRoutePatternMatched(this.onRouteMatched, this);
+                },
+                
+                rebindTable: function(oTemplate, sKeyboardMode) {
+                    this.getView().byId("tbCharge").bindItems({
+                        path: "LocalModel>/STORE_BAF_BATCH_DAY",
+                        template: oTemplate,
+                        templateShareable: true
+                    }).setKeyboardMode(sKeyboardMode);
+                },
 
-                })                   
+                onEdit: function() {
+                    this.aProductCollection = deepExtend([], this.getView().getModel("LocalModel").getProperty("/STORE_BAF_BATCH_DAY"));
+                    this.byId("editButton").setVisible(false);
+                    this.byId("saveButton").setVisible(true);
+                    this.byId("cancelButton").setVisible(true);
+                    this.getView().byId("tbCharge").getBinding("items").filter(this.oFilter);
+                    this.rebindTable(this.oEditableTemplate, "Edit");
+                },
+
+                onSave: function() {
+                    this.byId("saveButton").setVisible(false);
+                    this.byId("cancelButton").setVisible(false);
+                    this.byId("editButton").setVisible(true);
+                    this.rebindTable(this.oReadOnlyTemplate, "Navigation");
+                },
+
+                onCancel: function() {
+                    this.byId("cancelButton").setVisible(false);
+                    this.byId("saveButton").setVisible(false);
+                    this.byId("editButton").setVisible(true);
+                    this.oModel.setProperty("/ProductCollection", this.aProductCollection);
+                    this.rebindTable(this.oReadOnlyTemplate, "Navigation");
+                },
+
+                loadStores:function(){
+
+                    var oLocalModel = this.getView().getModel("LocalModel");
+                    var oModel = this.getView().getModel();
+                    
+                    oModel.read("/Stores",{
+                        success:$.proxy(function(oData){
+                            oLocalModel.setProperty("/Stores",oData.results);
+                        },this),
+                        failed:$.proxy(function(oError){
+                        
+                        },this)
+
+                    })                   
 
             },
 
@@ -88,7 +144,7 @@ sap.ui.define([
                 var storeFilter = new Filter("StoreID", FilterOperator.EQ, strStore);
                 var bafFilter = new Filter("BafID", FilterOperator.EQ, strBaf);
 
-                var oFilter = new Filter({
+                this.oFilter = new Filter({
                     filters:[storeFilter, bafFilter], 
                     and:true
                 });
@@ -96,7 +152,7 @@ sap.ui.define([
                 oModel.read("/STORE_BAF_BATCH_DAY",{
                     success:$.proxy(function(oData){
                        oLocalModel.setProperty("/STORE_BAF_BATCH_DAY",oData.results);
-                       this.getView().byId("tbCharge").getBinding("items").filter(oFilter);
+                       this.getView().byId("tbCharge").getBinding("items").filter(this.oFilter);
                       // this.getView().byId("tbChargeEditable").getBinding("items").filter(oFilter);
                        
                        this.getView().byId("tbHeaderTitle").setText("Store : "+strStore+" - "+valBaf);
@@ -111,28 +167,7 @@ sap.ui.define([
 
           
 
-		onEdit: function() {
-			this.byId("editButton").setVisible(false);
-			this.byId("saveButton").setVisible(true);
-            this.byId("cancelButton").setVisible(true);
-            
-
-		},
-
-		onSave: function() {
-			this.byId("saveButton").setVisible(false);
-			this.byId("cancelButton").setVisible(false);
-			this.byId("editButton").setVisible(true);
-		},
-
-		onCancel: function() {
-			this.byId("cancelButton").setVisible(false);
-			this.byId("saveButton").setVisible(false);
-			this.byId("editButton").setVisible(true);
-		},
-
-
-            onRouteMatched: function(oEvent) {
+		    onRouteMatched: function(oEvent) {
                 var oNameParameter = oEvent.getParameter("name");
                 console.log("oNameParameter -->"+oNameParameter);
 

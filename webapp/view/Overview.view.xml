@@ -44,7 +44,15 @@
         <Table id="tbCharge" growing="true" growingThreshold="10" items="{path:'LocalModel>/STORE_BAF_BATCH_DAY'}" >
 				<headerToolbar>
 					<OverflowToolbar id="otbSubheader">
-						<Title id="tbHeaderTitle" level="H2" />
+                        <Title id="tbHeaderTitle" level="H2" />
+                        	<ToolbarSpacer />
+                        <Button id="editButton" text="Edit" type="Transparent"
+                            press="onEdit" />
+                        
+                        <Button id="saveButton" text="Save" type="Transparent"
+							press="onSave" visible="false" />
+						<Button id="cancelButton" text="Cancel" type="Transparent"
+							press="onCancel" visible="false" />   
 					</OverflowToolbar>
 				</headerToolbar>
 				<columns>
@@ -81,7 +89,37 @@
                                 text="{LocalModel>BatchID}"
                                 state="None" />
                             
-                            <Input
+                                <ObjectStatus
+                                class="sapUiSmallMarginBottom"
+                                text="{LocalModel>Time_Monday}"
+                                state="None" />
+                                <ObjectStatus
+                                class="sapUiSmallMarginBottom"
+                                text="{LocalModel>Time_Tuesday}"
+                                state="None" />
+                                <ObjectStatus
+                                class="sapUiSmallMarginBottom"
+                                text="{LocalModel>Time_Wednesday}"
+                                state="None" />
+                                <ObjectStatus
+                                class="sapUiSmallMarginBottom"
+                                text="{LocalModel>Time_Thursday}"
+                                state="None" />
+                                <ObjectStatus
+                                class="sapUiSmallMarginBottom"
+                                text="{LocalModel>Time_Friday}"
+                                state="None" />
+                                <ObjectStatus
+                                class="sapUiSmallMarginBottom"
+                                text="{LocalModel>Time_Saturday}"
+                                state="None" />
+                                <ObjectStatus
+                                class="sapUiSmallMarginBottom"
+                                text="{LocalModel>Time_Sunday}"
+                                state="None" />
+                                
+                            
+                            <!--Input
                                 class="sapUiSmallMarginBottom"
                                 value="{LocalModel>Time_Monday}"
                                 valueState="{=${LocalModel>Active_Monday} === 1?Success:Error}" 
@@ -120,7 +158,7 @@
                                 class="sapUiSmallMarginBottom"
                                 value="{LocalModel>Time_Sunday}"
                                 state="None" 
-                                editable="false"/>    
+                                editable="false"/ -->    
 							
 						</cells>
 					</ColumnListItem>
