@@ -50,8 +50,10 @@ sap.ui.define([
 
                 var oLocalModel = this.getView().getModel("LocalModel");
                 var oModel = this.getOwnerComponent().getModel();//this.getView().getModel();
-
+                var tempFilter=[];
+                tempFilter.push(new Filter("StoreID", FilterOperator.NE, '9999'));
                 oModel.read("/Stores", {
+                    filters: tempFilter,
                     success: $.proxy(function (oData) {
                         oLocalModel.setProperty("/Stores", oData.results);
                     }, this),
@@ -119,11 +121,14 @@ sap.ui.define([
                             oData.results[i].UpdatedBatch = false;
                         }
                         oLocalModel.setProperty("/STORE_BAF_BATCH_DAY", oData.results);
-                        this.byId("editButton").setVisible(true);
-                        //this.getView().byId("tbCharge").getBinding("items").filter(this.oFilter);
-
+                        if(oData.results.length >0){
+                            this.byId("editButton").setVisible(true);
+                            this.byId("btCopyfromCentral").setVisible(false);
+                        }else{
+                            this.byId("btCopyfromCentral").setVisible(true);
+                            this.byId("editButton").setVisible(false);
+                        }        
                         this.getView().byId("tbHeaderTitle").setText("Store : " + strStore + " - " + valBaf);
-                        // this.getView().byId("tbHeaderTitleEdit").setText("Store : "+strStore+" - "+valBaf);
                     }, this),
                     failed: $.proxy(function (oError) {
 
@@ -319,6 +324,102 @@ sap.ui.define([
                     .then(function (oViewSettingsDialog) {
                         oViewSettingsDialog.close();
                     });
+            },
+
+            handleCopyFromCentral:function(){
+
+                var strBaf = this.getView().byId("cbBaf").getSelectedKey();
+                
+                var oLocalModel = this.getView().getModel("LocalModel");
+                var oModel = this.getOwnerComponent().getModel();//this.getView().getModel();
+
+                var storeFilter = new Filter("StoreID", FilterOperator.EQ, '9999');
+                var bafFilter = new Filter("BafID", FilterOperator.EQ, strBaf);
+
+                this.oFilter = new Filter({
+                    filters: [storeFilter, bafFilter],
+                    and: true
+                });
+                var tempFilter = []
+                tempFilter.push(storeFilter);
+                tempFilter.push(bafFilter);
+
+                oModel.read("/STORE_BAF_BATCH_DAY", {
+                    filters: tempFilter,
+                    success: $.proxy(function (oData) {
+                        for (var i = 0; i < oData.results.length; i++) {
+                            oData.results[i].UpdatedBatch = false;
+                        }
+                        oLocalModel.setProperty("/STORE_BAF_BATCH_DAY", oData.results);
+                        this.rebindTable(this.oEditableTemplate, "Edit");   
+                        this.getView().byId("btCopyfromCentral").setVisible(false);
+                        this.getView().byId("btCreate").setVisible(true);
+                        this.getView().byId("cancelButton").setVisible(true);
+                    }, this),
+                    failed: $.proxy(function (oError) {
+
+                    }, this)
+                }, this)
+            },
+
+            handleCreateBatch:function(oEvent){
+
+                var strStore = this.getView().byId("cbStore").getSelectedKey();
+                var strBaf = this.getView().byId("cbBaf").getSelectedKey();
+                var oModel = this.getOwnerComponent().getModel(); //this.getView().getModel();
+                var oLocalModel = this.getView().getModel("LocalModel");
+
+                var chargeData = oLocalModel.getProperty("/STORE_BAF_BATCH_DAY");
+                var nRecords=0;
+                var nRecCreated=0;
+                MessageBox.confirm("Do you want to Create a Charge for Store "+strStore+" and Department "+strBaf+"?", {
+                    title: "Confirm",
+                    onClose: $.proxy(function (oAction) {
+                        if (oAction === MessageBox.Action.OK) {
+
+                            oModel.setDeferredGroups(["CreateBatch"]);
+                            for (var i = 0; i < chargeData.length; i++) {
+                                if (chargeData[i].UpdatedBatch === true) {
+                                    nRecords++;
+                                    var payload = {
+                                        "StoreID": strStore,
+                                        "BafID": strBaf,
+                                        "BatchID": chargeData[i].BatchID,
+                                        "Active_Monday": chargeData[i].Active_Monday,
+                                        "Active_Tuesday": chargeData[i].Active_Tuesday,
+                                        "Active_Wednesday": chargeData[i].Active_Wednesday,
+                                        "Active_Thursday": chargeData[i].Active_Thursday,
+                                        "Active_Friday": chargeData[i].Active_Friday,
+                                        "Active_Saturday": chargeData[i].Active_Saturday,
+                                        "Active_Sunday": chargeData[i].Active_Sunday,
+                                        "Time_Monday": chargeData[i].Time_Monday,
+                                        "Time_Tuesday": chargeData[i].Time_Tuesday,
+                                        "Time_Wednesday": chargeData[i].Time_Wednesday,
+                                        "Time_Thursday": chargeData[i].Time_Thursday,
+                                        "Time_Friday": chargeData[i].Time_Friday,
+                                        "Time_Saturday": chargeData[i].Time_Saturday,
+                                        "Time_Sunday": chargeData[i].Time_Sunday,
+                                    }
+                                    oModel.create("/STORE_BAF_BATCH_DAY", payload, {
+                                        success: $.proxy(function () {
+                                            nRecCreated++;
+                                            this.byId("btCreate").setVisible(false);
+                                            this.byId("cancelButton").setVisible(false);
+                                            this.byId("editButton").setVisible(true);
+                                            if (nRecords === nRecCreated) {
+                                                this.rebindTable(this.oReadOnlyTemplate, "Navigation");
+                                            }
+                                        }, this),
+                                        error: $.proxy(function () {
+
+                                        }, this)
+                                    });
+                                }
+                            }
+                            oModel.submitChanges("CreateBatch");
+                        }
+                    },this)   
+                });
             }
 
             

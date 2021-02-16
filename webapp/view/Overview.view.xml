@@ -21,7 +21,7 @@
         </customHeader>
         <l:VerticalLayout width="100%">
 		    <fb:FilterBar reset="onReset" search="handleOnSearch" showRestoreButton="true" showClearButton="true">
-            <fb:filterGroupItems>    
+                <fb:filterGroupItems>    
                     <fb:FilterGroupItem groupName="__$INTERNAL$" name="Stores" label="Stores" labelTooltip="Tooltip Example" mandatory="true" partOfCurrentVariant="true" visibleInFilterBar="true">
                         <fb:control>
                             <ComboBox id="cbStore" items="{ path:'LocalModel>/Stores', sorter: { path: 'StoreID' } }" selectionChange="handleStoreChange">
@@ -44,12 +44,13 @@
 					<OverflowToolbar id="otbSubheader">
                         <Title id="tbHeaderTitle" level="H2" />
                         <ToolbarSpacer />
-                        <Button id="addButton" text="Copy From Central"
-                            press="onCreate" type="Default" ariaDescribedBy="defaultButtonDescription genericButtonDescription">
-                        </Button>    
+                        <Button id="btCopyfromCentral" text="Copy From Central" visible="false"
+                            press="handleCopyFromCentral" type="Default" />
                         <Button id="editButton" text="Edit" 
                             press="onEdit" />
                         
+                        <Button id="btCreate" text="Save" 
+							press="handleCreateBatch" visible="false" />
                         <Button id="saveButton" text="Save" 
 							press="onSave" visible="false" />
 						<Button id="cancelButton" text="Cancel" 
