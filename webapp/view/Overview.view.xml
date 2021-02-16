@@ -6,9 +6,7 @@
     xmlns:l="sap.ui.layout"
     xmlns:fb="sap.ui.comp.filterbar"
     xmlns:core="sap.ui.core">
-	<Shell>
-        <App>
-           
+	
     <Page id="page">
         <customHeader>
 			<Bar>
@@ -122,7 +120,4 @@
 				</items>
             </Table>
     </Page>
-
-</App>
-</Shell>
 </mvc:View>

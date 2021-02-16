@@ -56,10 +56,10 @@
     "sap.ui5": {
         "flexEnabled": false,
         "rootView": {
-            "viewName": "com.sap.fiorichargeapp.view.Overview",
+            "viewName": "com.sap.fiorichargeapp.view.App",
             "type": "XML",
             "async": true,
-            "id": "Overview"
+            "id": "app"
         },
         "dependencies": {
             "minUI5Version": "1.66.0",
@@ -99,20 +99,20 @@
                 "async": true,
                 "viewPath": "com.sap.fiorichargeapp.view",
                 "controlAggregation": "pages",
-                "controlId": "app",
+                "controlId": "idAppControl",
                 "clearControlAggregation": false
             },
             "routes": [
                 {
-                    "name": "RouteOverview",
-                    "pattern": "RouteOverview",
+                    "name": "Overview",
+                    "pattern": "",
                     "target": [
-                        "TargetOverview"
+                        "Overview"
                     ]
                 }
             ],
             "targets": {
-                "TargetOverview": {
+                "Overview": {
                     "viewType": "XML",
                     "transition": "slide",
                     "clearControlAggregation": false,

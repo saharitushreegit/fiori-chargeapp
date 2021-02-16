@@ -1,5 +1,6 @@
 sap.ui.define([
-    "sap/ui/core/mvc/Controller",
+    //"sap/ui/core/mvc/Controller",
+    "./BaseController",
     "sap/ui/model/json/JSONModel",
     "sap/ui/model/Filter",
     "sap/ui/model/FilterOperator",
@@ -13,10 +14,10 @@ sap.ui.define([
 	/**
 	 * @param {typeof sap.ui.core.mvc.Controller} Controller
 	 */
-    function (Controller, JSONModel, Filter, FilterOperator, ColumnListItem, Input, ObjectStatus, deepExtend, ValueState, MessageBox) {
+    function (BaseController, JSONModel, Filter, FilterOperator, ColumnListItem, Input, ObjectStatus, deepExtend, ValueState, MessageBox) {
         "use strict";
 
-        return Controller.extend("com.sap.fiorichargeapp.controller.Overview", {
+        return BaseController.extend("com.sap.fiorichargeapp.controller.Overview", {
             onInit: function () {
                 this.oRouter = new sap.ui.core.UIComponent.getRouterFor(this);
                 var oFilterModel = new JSONModel({
@@ -43,7 +44,7 @@ sap.ui.define([
             loadStores: function () {
 
                 var oLocalModel = this.getView().getModel("LocalModel");
-                var oModel = this.getView().getModel();
+                var oModel = this.getOwnerComponent().getModel();//this.getView().getModel();
 
                 oModel.read("/Stores", {
                     success: $.proxy(function (oData) {
@@ -59,7 +60,7 @@ sap.ui.define([
 
             loadBafs: function () {
                 var oLocalModel = this.getView().getModel("LocalModel");
-                var oModel = this.getView().getModel();
+                var oModel = this.getOwnerComponent().getModel();//this.getView().getModel();
 
                 oModel.read("/Bafs", {
                     success: $.proxy(function (oData) {
@@ -92,7 +93,7 @@ sap.ui.define([
                 var valBaf = this.getView().byId("cbBaf").getValue();
 
                 var oLocalModel = this.getView().getModel("LocalModel");
-                var oModel = this.getView().getModel();
+                var oModel = this.getOwnerComponent().getModel();//this.getView().getModel();
 
                 var storeFilter = new Filter("StoreID", FilterOperator.EQ, strStore);
                 var bafFilter = new Filter("BafID", FilterOperator.EQ, strBaf);
@@ -201,7 +202,7 @@ sap.ui.define([
 
             onSave: function () {
 
-                var oModel = this.getView().getModel();
+                var oModel = this.getOwnerComponent().getModel();//this.getView().getModel();
                 var oLocalModel = this.getView().getModel("LocalModel");
 
                 var chargeData = oLocalModel.getProperty("/STORE_BAF_BATCH_DAY");
