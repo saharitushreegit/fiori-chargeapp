@@ -32,6 +32,9 @@ sap.ui.define([
                 this._mViewSettingsDialogs={};
                 this.getView().setModel(oFilterModel, "LocalModel");
                 this.byId("editButton").setVisible(false);
+                this.byId("btCreate").setVisible(false);
+                this.byId("cancelButton").setVisible(false);
+                this.byId("saveButton").setVisible(false);
                 this.loadStores();
                 this.loadBafs();
                 this.oReadOnlyTemplate = this.byId("tbCharge").getBindingInfo("items").template;//this.byId("tbCharge").removeItem(0);
@@ -144,6 +147,7 @@ sap.ui.define([
                             text: "{LocalModel>BatchID}"
                         }),
                         new Input({
+                            id:"inpMonday",
                             value: "{LocalModel>Time_Monday}",
                             valueState: "{=${LocalModel>Active_Monday} === true?'Success':'None'}",
                             enabled: "{LocalModel>Active_Monday}",
@@ -151,36 +155,42 @@ sap.ui.define([
                             liveChange: this.onLiveChange
                         }),
                         new Input({
+                            id:"inpTuesday",
                             value: "{LocalModel>Time_Tuesday}",
                             valueState: "{=${LocalModel>Active_Tuesday} === true?'Success':'None'}",
                             enabled: "{LocalModel>Active_Tuesday}",
                             editable: "{LocalModel>Active_Tuesday}",
                             liveChange: this.onLiveChange
                         }), new Input({
+                            id:"inpWednesday",
                             value: "{LocalModel>Time_Wednesday}",
                             valueState: "{=${LocalModel>Active_Wednesday} === true?'Success':'None'}",
                             enabled: "{LocalModel>Active_Wednesday}",
                             editable: "{LocalModel>Active_Wednesday}",
                             liveChange: this.onLiveChange
                         }), new Input({
+                            id:"inpThursday",
                             value: "{LocalModel>Time_Thursday}",
                             valueState: "{=${LocalModel>Active_Thursday} === true?'Success':'None'}",
                             enabled: "{LocalModel>Active_Thursday}",
                             editable: "{LocalModel>Active_Thursday}",
                             liveChange: this.onLiveChange
                         }), new Input({
+                            id:"inpFriday",
                             value: "{LocalModel>Time_Friday}",
                             valueState: "{=${LocalModel>Active_Friday} === true?'Success':'None'}",
                             enabled: "{LocalModel>Active_Friday}",
                             editable: "{LocalModel>Active_Friday}",
                             liveChange: this.onLiveChange
                         }), new Input({
+                            id:"inpSaturday",
                             value: "{LocalModel>Time_Saturday}",
                             valueState: "{=${LocalModel>Active_Saturday} === true?'Success':'None'}",
                             enabled: "{LocalModel>Active_Saturday}",
                             editable: "{LocalModel>Active_Saturday}",
                             liveChange: this.onLiveChange
                         }), new Input({
+                            id:"inpSunday",
                             value: "{LocalModel>Time_Sunday}",
                             valueState: "{=${LocalModel>Active_Sunday} === true?'Success':'None'}",
                             enabled: "{LocalModel>Active_Sunday}",
@@ -279,20 +289,50 @@ sap.ui.define([
             onLiveChange: function (oEvent) {
                 var oLocalModel = this.getModel("LocalModel");
                 var i = oEvent.getSource();
+                var inpId = oEvent.getParameter("id");
+                var value = oEvent.getParameter("value");
 
                 var sPath = i.getParent().getBindingContext("LocalModel").sPath;
                 oLocalModel.setProperty(sPath + "/UpdatedBatch", true);
-                //oLocalModel.setProperty(sPath + "/UpdatedBatch", true);
+                /*if(inpId.includes("Monday") && value === ""){
+                    oLocalModel.setProperty(sPath + "/Active_Monday", false)
+                    oLocalModel.setProperty(sPath + "/Time_Monday", "00:00:00")
+                }*/
             },
 
             onChargeDelete:function(oEvent){
                 console.log(oEvent.getSource());
+                var oModel = this.getOwnerComponent().getModel(); //this.getView().getModel();
+                var oLocalModel = this.getView().getModel("LocalModel");    
+                var oParameter = oEvent.getParameter("listItem");
+                var selectedBatch = oParameter.getBindingContext("LocalModel").getObject();
+                var path = oParameter.getBindingContext("LocalModel").getPath();
+                var indexToDelete = path.substring(path.lastIndexOf("/") + 1);
+                var chargeData = oLocalModel.getProperty("/STORE_BAF_BATCH_DAY");
+
+                MessageBox.confirm("Are you Sure you want to Delete the Batch ?", {
+				title: "Confirm",
+				onClose: $.proxy(function(oAction) {
+                        if (oAction === MessageBox.Action.OK) {
+                            chargeData.splice(indexToDelete, 1);
+							oLocalModel.setProperty("/STORE_BAF_BATCH_DAY", chargeData);
+							oModel.remove("/STORE_BAF_BATCH_DAY(StoreID='" + selectedBatch.StoreID + "',BafID='" + selectedBatch.BafID + "',BatchID=" + selectedBatch.BatchID + ")", {
+								success: $.proxy(function() {
+									
+								}, this),
+								error: $.proxy(function() {
+									
+								}, this)
+							});
+                        }
+                    },this)   
+                });    
             },
 
             
 
             handleCopyFromCentral:function(){
-
+                var strStore = this.getView().byId("cbStore").getSelectedKey();    
                 var strBaf = this.getView().byId("cbBaf").getSelectedKey();
                 
                 var oLocalModel = this.getView().getModel("LocalModel");
@@ -313,6 +353,7 @@ sap.ui.define([
                     filters: tempFilter,
                     success: $.proxy(function (oData) {
                         for (var i = 0; i < oData.results.length; i++) {
+                            oData.results[i].StoreID=strStore;
                             oData.results[i].UpdatedBatch = false;
                         }
                         oLocalModel.setProperty("/STORE_BAF_BATCH_DAY", oData.results);
@@ -342,46 +383,44 @@ sap.ui.define([
                     onClose: $.proxy(function (oAction) {
                         if (oAction === MessageBox.Action.OK) {
 
-                            oModel.setDeferredGroups(["CreateBatch"]);
+                            //oModel.setDeferredGroups(["CreateBatch"]);
                             for (var i = 0; i < chargeData.length; i++) {
-                                if (chargeData[i].UpdatedBatch === true) {
-                                    nRecords++;
-                                    var payload = {
-                                        "StoreID": strStore,
-                                        "BafID": strBaf,
-                                        "BatchID": chargeData[i].BatchID,
-                                        "Active_Monday": chargeData[i].Active_Monday,
-                                        "Active_Tuesday": chargeData[i].Active_Tuesday,
-                                        "Active_Wednesday": chargeData[i].Active_Wednesday,
-                                        "Active_Thursday": chargeData[i].Active_Thursday,
-                                        "Active_Friday": chargeData[i].Active_Friday,
-                                        "Active_Saturday": chargeData[i].Active_Saturday,
-                                        "Active_Sunday": chargeData[i].Active_Sunday,
-                                        "Time_Monday": chargeData[i].Time_Monday,
-                                        "Time_Tuesday": chargeData[i].Time_Tuesday,
-                                        "Time_Wednesday": chargeData[i].Time_Wednesday,
-                                        "Time_Thursday": chargeData[i].Time_Thursday,
-                                        "Time_Friday": chargeData[i].Time_Friday,
-                                        "Time_Saturday": chargeData[i].Time_Saturday,
-                                        "Time_Sunday": chargeData[i].Time_Sunday,
-                                    }
-                                    oModel.create("/STORE_BAF_BATCH_DAY", payload, {
-                                        success: $.proxy(function () {
-                                            nRecCreated++;
-                                            this.byId("btCreate").setVisible(false);
-                                            this.byId("cancelButton").setVisible(false);
-                                            this.byId("editButton").setVisible(true);
-                                            if (nRecords === nRecCreated) {
-                                                this.rebindTable(this.oReadOnlyTemplate, "Navigation");
-                                            }
-                                        }, this),
-                                        error: $.proxy(function () {
-
-                                        }, this)
-                                    });
+                                nRecords++;
+                                var payload = {
+                                    "StoreID": chargeData[i].StoreID,
+                                    "BafID": chargeData[i].BafID,
+                                    "BatchID": chargeData[i].BatchID,
+                                    "Active_Monday": chargeData[i].Active_Monday,
+                                    "Active_Tuesday": chargeData[i].Active_Tuesday,
+                                    "Active_Wednesday": chargeData[i].Active_Wednesday,
+                                    "Active_Thursday": chargeData[i].Active_Thursday,
+                                    "Active_Friday": chargeData[i].Active_Friday,
+                                    "Active_Saturday": chargeData[i].Active_Saturday,
+                                    "Active_Sunday": chargeData[i].Active_Sunday,
+                                    "Time_Monday": chargeData[i].Time_Monday,
+                                    "Time_Tuesday": chargeData[i].Time_Tuesday,
+                                    "Time_Wednesday": chargeData[i].Time_Wednesday,
+                                    "Time_Thursday": chargeData[i].Time_Thursday,
+                                    "Time_Friday": chargeData[i].Time_Friday,
+                                    "Time_Saturday": chargeData[i].Time_Saturday,
+                                    "Time_Sunday": chargeData[i].Time_Sunday,
                                 }
+                                oModel.create("/STORE_BAF_BATCH_DAY", payload, {
+                                    success: $.proxy(function (oData) {
+                                        nRecCreated++;
+                                        this.byId("btCreate").setVisible(false);
+                                        this.byId("cancelButton").setVisible(false);
+                                        this.byId("editButton").setVisible(true);
+                                        if (nRecords === nRecCreated) {
+                                            this.rebindTable(this.oReadOnlyTemplate, "Navigation");
+                                        }
+                                    }, this),
+                                    error: $.proxy(function () {
+
+                                    }, this)
+                                });
                             }
-                            oModel.submitChanges("CreateBatch");
+                            //oModel.submitChanges("CreateBatch");
                         }
                     },this)   
                 });
