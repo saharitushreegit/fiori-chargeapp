@@ -282,49 +282,14 @@ sap.ui.define([
 
                 var sPath = i.getParent().getBindingContext("LocalModel").sPath;
                 oLocalModel.setProperty(sPath + "/UpdatedBatch", true);
-                /*if (i.getValue() !== "") {
-                    this.timeout = setTimeout(function () {
-                        i.getParent().getParent().focus();
-                    }.bind(this), 2000);
-			    }*/
+                //oLocalModel.setProperty(sPath + "/UpdatedBatch", true);
             },
 
             onChargeDelete:function(oEvent){
                 console.log(oEvent.getSource());
             },
 
-            getViewSettingsDialog: function (sDialogFragmentName) {
-                var pDialog = this._mViewSettingsDialogs[sDialogFragmentName];
-                
-                if (!pDialog) {
-                    pDialog = Fragment.load({
-                        id: this.getView().getId(),
-                        name: sDialogFragmentName,
-                        controller: this
-                    }).then(function (oDialog) {
-                        if (Device.system.desktop) {
-                            oDialog.addStyleClass("sapUiSizeCompact");
-                        }
-                        return oDialog;
-                    });
-                    this._mViewSettingsDialogs[sDialogFragmentName] = pDialog;
-                }
-                return pDialog;
-            },
-
-            onCreate: function () {
-                this.getViewSettingsDialog("com.sap.fiorichargeapp.view.fragment.CreateChargeFromCentral")
-                    .then(function (oViewSettingsDialog) {
-                        oViewSettingsDialog.open();
-                    });
-            },
-
-            handleClose: function(){
-                this.getViewSettingsDialog("com.sap.fiorichargeapp.view.fragment.CreateChargeFromCentral")
-                    .then(function (oViewSettingsDialog) {
-                        oViewSettingsDialog.close();
-                    });
-            },
+            
 
             handleCopyFromCentral:function(){
 
@@ -424,8 +389,39 @@ sap.ui.define([
 
             
 
-            
+    /**** not used ****/        
 
+    /*getViewSettingsDialog: function (sDialogFragmentName) {
+                var pDialog = this._mViewSettingsDialogs[sDialogFragmentName];
+                
+                if (!pDialog) {
+                    pDialog = Fragment.load({
+                        id: this.getView().getId(),
+                        name: sDialogFragmentName,
+                        controller: this
+                    }).then(function (oDialog) {
+                        if (Device.system.desktop) {
+                            oDialog.addStyleClass("sapUiSizeCompact");
+                        }
+                        return oDialog;
+                    });
+                    this._mViewSettingsDialogs[sDialogFragmentName] = pDialog;
+                }
+                return pDialog;
+            },
 
+            onCreate: function () {
+                this.getViewSettingsDialog("com.sap.fiorichargeapp.view.fragment.CreateChargeFromCentral")
+                    .then(function (oViewSettingsDialog) {
+                        oViewSettingsDialog.open();
+                    });
+            },
+
+            handleClose: function(){
+                this.getViewSettingsDialog("com.sap.fiorichargeapp.view.fragment.CreateChargeFromCentral")
+                    .then(function (oViewSettingsDialog) {
+                        oViewSettingsDialog.close();
+                    });
+            }*/        
         });
     });
