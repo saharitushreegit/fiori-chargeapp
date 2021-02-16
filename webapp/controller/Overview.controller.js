@@ -10,11 +10,14 @@ sap.ui.define([
     'sap/base/util/deepExtend',
     'sap/ui/core/ValueState',
     'sap/m/MessageBox',
+    'sap/ui/core/Fragment',
+	'sap/ui/Device'
 ],
 	/**
 	 * @param {typeof sap.ui.core.mvc.Controller} Controller
 	 */
-    function (BaseController, JSONModel, Filter, FilterOperator, ColumnListItem, Input, ObjectStatus, deepExtend, ValueState, MessageBox) {
+    function (BaseController, JSONModel, Filter, FilterOperator, ColumnListItem, Input, ObjectStatus, 
+        deepExtend, ValueState, MessageBox,Fragment,Device) {
         "use strict";
 
         return BaseController.extend("com.sap.fiorichargeapp.controller.Overview", {
@@ -25,6 +28,8 @@ sap.ui.define([
                     Bafs: [],
                     STORE_BAF_BATCH_DAY: []
                 })
+
+                this._mViewSettingsDialogs={};
                 this.getView().setModel(oFilterModel, "LocalModel");
                 this.byId("editButton").setVisible(false);
                 this.loadStores();
@@ -282,6 +287,41 @@ sap.ui.define([
             onChargeDelete:function(oEvent){
                 console.log(oEvent.getSource());
             },
+
+            getViewSettingsDialog: function (sDialogFragmentName) {
+                var pDialog = this._mViewSettingsDialogs[sDialogFragmentName];
+                
+                if (!pDialog) {
+                    pDialog = Fragment.load({
+                        id: this.getView().getId(),
+                        name: sDialogFragmentName,
+                        controller: this
+                    }).then(function (oDialog) {
+                        if (Device.system.desktop) {
+                            oDialog.addStyleClass("sapUiSizeCompact");
+                        }
+                        return oDialog;
+                    });
+                    this._mViewSettingsDialogs[sDialogFragmentName] = pDialog;
+                }
+                return pDialog;
+            },
+
+            onCreate: function () {
+                this.getViewSettingsDialog("com.sap.fiorichargeapp.view.fragment.CreateChargeFromCentral")
+                    .then(function (oViewSettingsDialog) {
+                        oViewSettingsDialog.open();
+                    });
+            },
+
+            handleClose: function(){
+                this.getViewSettingsDialog("com.sap.fiorichargeapp.view.fragment.CreateChargeFromCentral")
+                    .then(function (oViewSettingsDialog) {
+                        oViewSettingsDialog.close();
+                    });
+            }
+
+            
 
             
 

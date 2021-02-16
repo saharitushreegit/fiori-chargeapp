@@ -43,13 +43,16 @@
 				<headerToolbar>
 					<OverflowToolbar id="otbSubheader">
                         <Title id="tbHeaderTitle" level="H2" />
-                        	<ToolbarSpacer />
-                        <Button id="editButton" text="Edit" type="Transparent"
+                        <ToolbarSpacer />
+                        <Button id="addButton" text="Copy From Central"
+                            press="onCreate" type="Default" ariaDescribedBy="defaultButtonDescription genericButtonDescription">
+                        </Button>    
+                        <Button id="editButton" text="Edit" 
                             press="onEdit" />
                         
-                        <Button id="saveButton" text="Save" type="Transparent"
+                        <Button id="saveButton" text="Save" 
 							press="onSave" visible="false" />
-						<Button id="cancelButton" text="Cancel" type="Transparent"
+						<Button id="cancelButton" text="Cancel" 
 							press="onCancel" visible="false" />   
 					</OverflowToolbar>
 				</headerToolbar>
