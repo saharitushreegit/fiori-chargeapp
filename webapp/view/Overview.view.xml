@@ -5,7 +5,11 @@
     xmlns="sap.m"
     xmlns:l="sap.ui.layout"
     xmlns:fb="sap.ui.comp.filterbar"
-    xmlns:core="sap.ui.core">
+    xmlns:core="sap.ui.core"
+    core:require="{
+        DateTimeType: 'sap/ui/model/odata/type/DateTime',
+        TimeType: 'sap/ui/model/odata/type/Time'
+    }">
 	
     <Page id="page">
         <customHeader>
@@ -29,17 +33,17 @@
                             </ComboBox>
                         </fb:control>
                     </fb:FilterGroupItem>
-                    <fb:FilterGroupItem groupName="__$INTERNAL$" name="Baf" label="Baf" labelTooltip="Tooltip Example" mandatory="true" partOfCurrentVariant="true" visibleInFilterBar="true">
+                    <fb:FilterGroupItem groupName="__$INTERNAL$" name="Department" label="Department" labelTooltip="Tooltip Example" mandatory="true" partOfCurrentVariant="true" visibleInFilterBar="true">
                         <fb:control>
-                             <ComboBox id="cbBaf" items="{ path:'LocalModel>/Bafs', sorter: { path: 'BafID' } }">
-                                <core:Item key="{LocalModel>BafID}" text="{LocalModel>BafDescription}"/>    
+                             <ComboBox id="cbDepartment" items="{ path:'LocalModel>/Departments', sorter: { path: 'DepartmentID' } }">
+                                <core:Item key="{LocalModel>DepartmentID}" text="{LocalModel>DepartmentDescription}"/>    
                             </ComboBox>
                         </fb:control>
                     </fb:FilterGroupItem>
                 </fb:filterGroupItems>   
             </fb:FilterBar>		
         </l:VerticalLayout>
-        <Table id="tbCharge" growing="true" growingThreshold="10" items="{path:'LocalModel>/STORE_BAF_BATCH_DAY'}" mode="Delete" delete="onChargeDelete">
+        <Table id="tbCharge" growing="true" growingThreshold="10" items="{path:'LocalModel>/Batches'}" mode="Delete" delete="handleChargeDelete">
 				<headerToolbar>
 					<OverflowToolbar id="otbSubheader">
                         <Title id="tbHeaderTitle" level="H2" />
@@ -47,14 +51,14 @@
                         <Button id="btCopyfromCentral" text="Copy From Central" visible="false"
                             press="handleCopyFromCentral" type="Default" />
                         <Button id="editButton" text="Edit" 
-                            press="onEdit" />
+                            press="handleEdit" />
                         
                         <Button id="btCreate" text="Save" 
 							press="handleCreateBatch" visible="false" />
                         <Button id="saveButton" text="Save" 
-							press="onSave" visible="false" />
+							press="handleSave" visible="false" />
 						<Button id="cancelButton" text="Cancel" 
-							press="onCancel" visible="false" />   
+							press="handleCancel" visible="false" />   
 					</OverflowToolbar>
 				</headerToolbar>
 				<columns>
@@ -90,35 +94,41 @@
                                 class="sapUiSmallMarginBottom"
                                 text="{LocalModel>BatchID}"
                                 state="None" />
-                            
-                                <ObjectStatus
-                                class="sapUiSmallMarginBottom"
-                                text="{LocalModel>Time_Monday}"
-                                state="None" />
-                                <ObjectStatus
-                                class="sapUiSmallMarginBottom"
-                                text="{LocalModel>Time_Tuesday}"
-                                state="None" />
-                                <ObjectStatus
-                                class="sapUiSmallMarginBottom"
-                                text="{LocalModel>Time_Wednesday}"
-                                state="None" />
-                                <ObjectStatus
-                                class="sapUiSmallMarginBottom"
-                                text="{LocalModel>Time_Thursday}"
-                                state="None" />
-                                <ObjectStatus
-                                class="sapUiSmallMarginBottom"
-                                text="{LocalModel>Time_Friday}"
-                                state="None" />
-                                <ObjectStatus
-                                class="sapUiSmallMarginBottom"
-                                text="{LocalModel>Time_Saturday}"
-                                state="None" />
-                                <ObjectStatus
-                                class="sapUiSmallMarginBottom"
-                                text="{LocalModel>Time_Sunday}"
-                                state="None" />
+                                <Text text="{
+                                    path: 'LocalModel>Time_Monday',
+                                    type: 'TimeType',
+                                    formatOptions: { style: 'medium' }
+                                }" />
+                                 <Text text="{
+                                    path: 'LocalModel>Time_Tuesday',
+                                    type: 'TimeType',
+                                    formatOptions: { style: 'medium' }
+                                }" />
+                                 <Text text="{
+                                    path: 'LocalModel>Time_Wednesday',
+                                    type: 'TimeType',
+                                    formatOptions: { style: 'medium' }
+                                }" />
+                                 <Text text="{
+                                    path: 'LocalModel>Time_Thursday',
+                                    type: 'TimeType',
+                                    formatOptions: { style: 'medium' }
+                                }" />
+                                 <Text text="{
+                                    path: 'LocalModel>Time_Friday',
+                                    type: 'TimeType',
+                                    formatOptions: { style: 'medium' }
+                                }" />
+                                 <Text text="{
+                                    path: 'LocalModel>Time_Saturday',
+                                    type: 'TimeType',
+                                    formatOptions: { style: 'medium' }
+                                }" />
+                                 <Text text="{
+                                    path: 'LocalModel>Time_Sunday',
+                                    type: 'TimeType',
+                                    formatOptions: { style: 'medium' }
+                                }" />
                         </cells>
 					</ColumnListItem>
 				</items>

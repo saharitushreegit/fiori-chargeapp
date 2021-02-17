@@ -21,7 +21,7 @@ server:
     configuration:
       backend:
       - path: /v2
-        url: https://8de578a4trial-dev-charge-app-srv.cfapps.eu10.hana.ondemand.com
+        url: https://8de578a4trial-dev-pal2-service.cfapps.eu10.hana.ondemand.com
   - name: fiori-tools-appreload
     afterMiddleware: compression
     configuration:

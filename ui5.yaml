@@ -11,7 +11,7 @@ server:
       ignoreCertError: false # If set to true, certificate errors will be ignored. E.g. self-signed certificates will be accepted
       backend:
       - path: /v2
-        url: https://8de578a4trial-dev-charge-app-srv.cfapps.eu10.hana.ondemand.com
+        url: https://8de578a4trial-dev-pal2-service.cfapps.eu10.hana.ondemand.com
       ui5:
         path: 
         - /resources

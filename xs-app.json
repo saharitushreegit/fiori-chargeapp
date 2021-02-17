@@ -5,7 +5,7 @@
     {
       "source": "^/v2/(.*)$",
       "target": "/v2/$1",
-      "destination": "charge-app-service",
+      "destination": "pal2-service",
       "authenticationType": "none",
       "csrfProtection": false
     },

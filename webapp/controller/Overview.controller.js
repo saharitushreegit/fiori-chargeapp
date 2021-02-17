@@ -11,13 +11,15 @@ sap.ui.define([
     'sap/ui/core/ValueState',
     'sap/m/MessageBox',
     'sap/ui/core/Fragment',
-	'sap/ui/Device'
+    'sap/ui/Device',
+    'sap/m/TimePicker'
+    
 ],
 	/**
 	 * @param {typeof sap.ui.core.mvc.Controller} Controller
 	 */
     function (BaseController, JSONModel, Filter, FilterOperator, ColumnListItem, Input, ObjectStatus, 
-        deepExtend, ValueState, MessageBox,Fragment,Device) {
+        deepExtend, ValueState, MessageBox,Fragment,Device,TimePicker) {
         "use strict";
 
         return BaseController.extend("com.sap.fiorichargeapp.controller.Overview", {
@@ -25,18 +27,18 @@ sap.ui.define([
                 this.oRouter = new sap.ui.core.UIComponent.getRouterFor(this);
                 var oFilterModel = new JSONModel({
                     Stores: [],
-                    Bafs: [],
-                    STORE_BAF_BATCH_DAY: []
+                    Departments: [],
+                    Batches: []
                 })
 
-                this._mViewSettingsDialogs={};
+                //this._mViewSettingsDialogs={};
                 this.getView().setModel(oFilterModel, "LocalModel");
                 this.byId("editButton").setVisible(false);
                 this.byId("btCreate").setVisible(false);
                 this.byId("cancelButton").setVisible(false);
                 this.byId("saveButton").setVisible(false);
                 this.loadStores();
-                this.loadBafs();
+                this.loadDepartment();
                 this.oReadOnlyTemplate = this.byId("tbCharge").getBindingInfo("items").template;//this.byId("tbCharge").removeItem(0);
                 //this.rebindTable(this.oReadOnlyTemplate, "Navigation");
                 this.initializeEditableTemplate();
@@ -68,13 +70,43 @@ sap.ui.define([
 
             },
 
-            loadBafs: function () {
+            loadDepartment: function () {
+                console.log("loadDepartment");
                 var oLocalModel = this.getView().getModel("LocalModel");
                 var oModel = this.getOwnerComponent().getModel();//this.getView().getModel();
 
-                oModel.read("/Bafs", {
+                oModel.read("/Departments", {
                     success: $.proxy(function (oData) {
-                        oLocalModel.setProperty("/Bafs", oData.results);
+                        oLocalModel.setProperty("/Departments", oData.results);
+                    }, this),
+                    failed: $.proxy(function (oError) {
+                        console.log(oError)
+                    }, this)
+
+                })
+            },
+
+            handleStoreChange: function (oEvent) {
+                console.log("handleStoreChange");
+                var oLocalModel = this.getView().getModel("LocalModel");
+                var oModel = this.getOwnerComponent().getModel();
+                var filters = [];
+                var selectedStore = oEvent.oSource.getSelectedKey();
+                var cbDepartment =this.getView().byId("cbDepartment");
+                console.log("selectedStore >>"+selectedStore);
+                if (selectedStore.length > 0) {
+                    filters = [new sap.ui.model.Filter("StoreID", sap.ui.model.FilterOperator.EQ, selectedStore)];
+                }
+
+                oModel.read("/StoresToDepartments", {
+                    filters:filters,
+                    success: $.proxy(function (oData) {
+                        var filterDep=[];
+                        for (var i = 0; i < oData.results.length; i++) {
+                            filterDep.push(new Filter("DepartmentID" , FilterOperator.EQ, oData.results[i].DepartmentID));
+                        }
+                        cbDepartment.getBinding("items").filter(filterDep);
+                        cbDepartment.setSelectedItemId("");
                     }, this),
                     failed: $.proxy(function (oError) {
 
@@ -83,47 +115,29 @@ sap.ui.define([
                 })
             },
 
-            handleStoreChange: function (oEvent) {
-                var filters = [];
-                var selectedStore = oEvent.oSource.getSelectedKey();
-                if (selectedStore.length > 0) {
-                    filters = [new sap.ui.model.Filter("StoreID", sap.ui.model.FilterOperator.EQ, selectedStore)];
-                }
-
-                this.getView().byId("cbBaf").getBinding("items").filter(filters);
-                this.getView().byId("cbBaf").setSelectedItemId("");
-
-                console.log("selectedStore >>>" + selectedStore);
-            },
-
             handleOnSearch: function (oEvent) {
+                var oLocalModel = this.getView().getModel("LocalModel");
+                var oModel = this.getOwnerComponent().getModel();
 
                 var strStore = this.getView().byId("cbStore").getSelectedKey();
-                var strBaf = this.getView().byId("cbBaf").getSelectedKey();
-                var valBaf = this.getView().byId("cbBaf").getValue();
+                var strDepartmentID = this.getView().byId("cbDepartment").getSelectedKey();
+                var valBaf = this.getView().byId("cbDepartment").getValue();
 
-                var oLocalModel = this.getView().getModel("LocalModel");
-                var oModel = this.getOwnerComponent().getModel();//this.getView().getModel();
+                var storeFilter = new Filter("Store_StoreID", FilterOperator.EQ, strStore);
+                var depFilter = new Filter("Department_DepartmentID", FilterOperator.EQ, strDepartmentID);
 
-                var storeFilter = new Filter("StoreID", FilterOperator.EQ, strStore);
-                var bafFilter = new Filter("BafID", FilterOperator.EQ, strBaf);
-
-                this.oFilter = new Filter({
-                    filters: [storeFilter, bafFilter],
-                    and: true
-                });
                 var tempFilter = []
                 tempFilter.push(storeFilter);
-                tempFilter.push(bafFilter);
+                tempFilter.push(depFilter);
 
-                oModel.read("/STORE_BAF_BATCH_DAY", {
+                oModel.read("/Batches", {
                     filters: tempFilter,
                     success: $.proxy(function (oData) {
 
                         for (var i = 0; i < oData.results.length; i++) {
                             oData.results[i].UpdatedBatch = false;
                         }
-                        oLocalModel.setProperty("/STORE_BAF_BATCH_DAY", oData.results);
+                        oLocalModel.setProperty("/Batches", oData.results);
                         if(oData.results.length >0){
                             this.byId("editButton").setVisible(true);
                             this.byId("btCopyfromCentral").setVisible(false);
@@ -146,86 +160,89 @@ sap.ui.define([
                         new ObjectStatus({
                             text: "{LocalModel>BatchID}"
                         }),
-                        new Input({
-                            id:"inpMonday",
-                            value: "{LocalModel>Time_Monday}",
+                        new TimePicker({
                             valueState: "{=${LocalModel>Active_Monday} === true?'Success':'None'}",
-                            enabled: "{LocalModel>Active_Monday}",
-                            editable: "{LocalModel>Active_Monday}",
-                            liveChange: this.onLiveChange
+                            valueFormat:"HH:mm:ss",
+                            displayFormat:"HH:mm:ss",
+                            change:"handleChange",
+                            support2400:true,
+                            value:"{path :'LocalModel>Time_Monday', type: 'sap.ui.model.odata.type.Time'}"   
                         }),
-                        new Input({
-                            id:"inpTuesday",
-                            value: "{LocalModel>Time_Tuesday}",
+                        new TimePicker({
                             valueState: "{=${LocalModel>Active_Tuesday} === true?'Success':'None'}",
-                            enabled: "{LocalModel>Active_Tuesday}",
-                            editable: "{LocalModel>Active_Tuesday}",
-                            liveChange: this.onLiveChange
-                        }), new Input({
-                            id:"inpWednesday",
-                            value: "{LocalModel>Time_Wednesday}",
+                            valueFormat:"HH:mm:ss",
+                            displayFormat:"HH:mm:ss",
+                            change:"handleChange",
+                            support2400:true,
+                            value:"{path :'LocalModel>Time_Tuesday', type: 'sap.ui.model.odata.type.Time'}"   
+                        }),
+                        new TimePicker({
                             valueState: "{=${LocalModel>Active_Wednesday} === true?'Success':'None'}",
-                            enabled: "{LocalModel>Active_Wednesday}",
-                            editable: "{LocalModel>Active_Wednesday}",
-                            liveChange: this.onLiveChange
-                        }), new Input({
-                            id:"inpThursday",
-                            value: "{LocalModel>Time_Thursday}",
+                            valueFormat:"HH:mm:ss",
+                            displayFormat:"HH:mm:ss",
+                            change:"handleChange",
+                            support2400:true,
+                            value:"{path :'LocalModel>Time_Wednesday', type: 'sap.ui.model.odata.type.Time'}"   
+                        }),
+                        new TimePicker({
                             valueState: "{=${LocalModel>Active_Thursday} === true?'Success':'None'}",
-                            enabled: "{LocalModel>Active_Thursday}",
-                            editable: "{LocalModel>Active_Thursday}",
-                            liveChange: this.onLiveChange
-                        }), new Input({
-                            id:"inpFriday",
-                            value: "{LocalModel>Time_Friday}",
+                            valueFormat:"HH:mm:ss",
+                            displayFormat:"HH:mm:ss",
+                            change:"handleChange",
+                            support2400:true,
+                            value:"{path :'LocalModel>Time_Thursday', type: 'sap.ui.model.odata.type.Time'}"   
+                        }),
+                        new TimePicker({
                             valueState: "{=${LocalModel>Active_Friday} === true?'Success':'None'}",
-                            enabled: "{LocalModel>Active_Friday}",
-                            editable: "{LocalModel>Active_Friday}",
-                            liveChange: this.onLiveChange
-                        }), new Input({
-                            id:"inpSaturday",
-                            value: "{LocalModel>Time_Saturday}",
+                            valueFormat:"HH:mm:ss",
+                            displayFormat:"HH:mm:ss",
+                            change:"handleChange",
+                            support2400:true,
+                            value:"{path :'LocalModel>Time_Friday', type: 'sap.ui.model.odata.type.Time'}"   
+                        }),
+                        new TimePicker({
                             valueState: "{=${LocalModel>Active_Saturday} === true?'Success':'None'}",
-                            enabled: "{LocalModel>Active_Saturday}",
-                            editable: "{LocalModel>Active_Saturday}",
-                            liveChange: this.onLiveChange
-                        }), new Input({
-                            id:"inpSunday",
-                            value: "{LocalModel>Time_Sunday}",
+                            valueFormat:"HH:mm:ss",
+                            displayFormat:"HH:mm:ss",
+                            change:"handleChange",
+                            support2400:true,
+                            value:"{path :'LocalModel>Time_Saturday', type: 'sap.ui.model.odata.type.Time'}"   
+                        }),
+                        new TimePicker({
+                            id:"TP1",
                             valueState: "{=${LocalModel>Active_Sunday} === true?'Success':'None'}",
-                            enabled: "{LocalModel>Active_Sunday}",
-                            editable: "{LocalModel>Active_Sunday}",
-                            liveChange: this.onLiveChange
-                        })
+                            valueFormat:"HH:mm:ss",
+                            displayFormat:"HH:mm:ss",
+                            change:"handleChange",
+                            support2400:true,
+                            value:"{path :'LocalModel>Time_Sunday', type: 'sap.ui.model.odata.type.Time'}"   
+                        }),
                     ]
                 });
             },
 
             rebindTable: function (oTemplate, sKeyboardMode) {
                 this.getView().byId("tbCharge").bindItems({
-                    path: "LocalModel>/STORE_BAF_BATCH_DAY",
+                    path: "LocalModel>/Batches",
                     template: oTemplate,
                     templateShareable: true
                 }).setKeyboardMode(sKeyboardMode);
-
-                //this.getView().byId("tbCharge").getBinding("items").filter(this.oFilter);
-
             },
 
-            onEdit: function () {
-                this.aProductCollection = deepExtend([], this.getView().getModel("LocalModel").getProperty("/STORE_BAF_BATCH_DAY"));
+            handleEdit: function () {
+                this.aProductCollection = deepExtend([], this.getView().getModel("LocalModel").getProperty("/Batches"));
                 this.byId("editButton").setVisible(false);
                 this.byId("saveButton").setVisible(true);
                 this.byId("cancelButton").setVisible(true);
                 this.rebindTable(this.oEditableTemplate, "Edit");
             },
 
-            onSave: function () {
+            handleSave: function () {
 
                 var oModel = this.getOwnerComponent().getModel();//this.getView().getModel();
                 var oLocalModel = this.getView().getModel("LocalModel");
 
-                var chargeData = oLocalModel.getProperty("/STORE_BAF_BATCH_DAY");
+                var chargeData = oLocalModel.getProperty("/Batches");
                 var nRecords = 0;
                 var nRecUpdated = 0;
                 MessageBox.confirm("Do you want to Update Charge ?", {
@@ -278,11 +295,11 @@ sap.ui.define([
                 });
             },
 
-            onCancel: function () {
+            handleCancel: function () {
                 this.byId("cancelButton").setVisible(false);
                 this.byId("saveButton").setVisible(false);
                 this.byId("editButton").setVisible(true);
-                this.getView().getModel("LocalModel").setProperty("/STORE_BAF_BATCH_DAY", this.aProductCollection);
+                this.getView().getModel("LocalModel").setProperty("/Batches", this.aProductCollection);
                 this.rebindTable(this.oReadOnlyTemplate, "Navigation");
             },
 
@@ -300,7 +317,7 @@ sap.ui.define([
                 }*/
             },
 
-            onChargeDelete:function(oEvent){
+            handleChargeDelete:function(oEvent){
                 console.log(oEvent.getSource());
                 var oModel = this.getOwnerComponent().getModel(); //this.getView().getModel();
                 var oLocalModel = this.getView().getModel("LocalModel");    
@@ -308,15 +325,15 @@ sap.ui.define([
                 var selectedBatch = oParameter.getBindingContext("LocalModel").getObject();
                 var path = oParameter.getBindingContext("LocalModel").getPath();
                 var indexToDelete = path.substring(path.lastIndexOf("/") + 1);
-                var chargeData = oLocalModel.getProperty("/STORE_BAF_BATCH_DAY");
+                var chargeData = oLocalModel.getProperty("/Batches");
 
                 MessageBox.confirm("Are you Sure you want to Delete the Batch ?", {
 				title: "Confirm",
 				onClose: $.proxy(function(oAction) {
                         if (oAction === MessageBox.Action.OK) {
                             chargeData.splice(indexToDelete, 1);
-							oLocalModel.setProperty("/STORE_BAF_BATCH_DAY", chargeData);
-							oModel.remove("/STORE_BAF_BATCH_DAY(StoreID='" + selectedBatch.StoreID + "',BafID='" + selectedBatch.BafID + "',BatchID=" + selectedBatch.BatchID + ")", {
+							oLocalModel.setProperty("/Batches", chargeData);
+							oModel.remove("/Batches(StoreID='" + selectedBatch.StoreID + "',BafID='" + selectedBatch.BafID + "',BatchID=" + selectedBatch.BatchID + ")", {
 								success: $.proxy(function() {
 									
 								}, this),
@@ -333,30 +350,26 @@ sap.ui.define([
 
             handleCopyFromCentral:function(){
                 var strStore = this.getView().byId("cbStore").getSelectedKey();    
-                var strBaf = this.getView().byId("cbBaf").getSelectedKey();
+                var strBaf = this.getView().byId("cbDepartment").getSelectedKey();
                 
                 var oLocalModel = this.getView().getModel("LocalModel");
                 var oModel = this.getOwnerComponent().getModel();//this.getView().getModel();
 
-                var storeFilter = new Filter("StoreID", FilterOperator.EQ, '9999');
-                var bafFilter = new Filter("BafID", FilterOperator.EQ, strBaf);
+                var storeFilter = new Filter("Store_StoreID", FilterOperator.EQ, '9999');
+                var depFilter = new Filter("Department_DepartmentID", FilterOperator.EQ, strBaf);
 
-                this.oFilter = new Filter({
-                    filters: [storeFilter, bafFilter],
-                    and: true
-                });
                 var tempFilter = []
                 tempFilter.push(storeFilter);
-                tempFilter.push(bafFilter);
+                tempFilter.push(depFilter);
 
-                oModel.read("/STORE_BAF_BATCH_DAY", {
+                oModel.read("/Batches", {
                     filters: tempFilter,
                     success: $.proxy(function (oData) {
                         for (var i = 0; i < oData.results.length; i++) {
                             oData.results[i].StoreID=strStore;
                             oData.results[i].UpdatedBatch = false;
                         }
-                        oLocalModel.setProperty("/STORE_BAF_BATCH_DAY", oData.results);
+                        oLocalModel.setProperty("/Batches", oData.results);
                         this.rebindTable(this.oEditableTemplate, "Edit");   
                         this.getView().byId("btCopyfromCentral").setVisible(false);
                         this.getView().byId("btCreate").setVisible(true);
@@ -371,11 +384,11 @@ sap.ui.define([
             handleCreateBatch:function(oEvent){
 
                 var strStore = this.getView().byId("cbStore").getSelectedKey();
-                var strBaf = this.getView().byId("cbBaf").getSelectedKey();
+                var strBaf = this.getView().byId("cbDepartment").getSelectedKey();
                 var oModel = this.getOwnerComponent().getModel(); //this.getView().getModel();
                 var oLocalModel = this.getView().getModel("LocalModel");
 
-                var chargeData = oLocalModel.getProperty("/STORE_BAF_BATCH_DAY");
+                var chargeData = oLocalModel.getProperty("/Batches");
                 var nRecords=0;
                 var nRecCreated=0;
                 MessageBox.confirm("Do you want to Create a Charge for Store "+strStore+" and Department "+strBaf+"?", {
@@ -405,7 +418,7 @@ sap.ui.define([
                                     "Time_Saturday": chargeData[i].Time_Saturday,
                                     "Time_Sunday": chargeData[i].Time_Sunday,
                                 }
-                                oModel.create("/STORE_BAF_BATCH_DAY", payload, {
+                                oModel.create("/Batches", payload, {
                                     success: $.proxy(function (oData) {
                                         nRecCreated++;
                                         this.byId("btCreate").setVisible(false);
@@ -461,6 +474,50 @@ sap.ui.define([
                     .then(function (oViewSettingsDialog) {
                         oViewSettingsDialog.close();
                     });
-            }*/        
+            }*/  
+            /*
+            new Input({
+                            id:"inpTuesday",
+                            value: "{LocalModel>Time_Tuesday}",
+                            valueState: "{=${LocalModel>Active_Tuesday} === true?'Success':'None'}",
+                            enabled: "{LocalModel>Active_Tuesday}",
+                            editable: "{LocalModel>Active_Tuesday}",
+                            liveChange: this.onLiveChange
+                        }), new Input({
+                            id:"inpWednesday",
+                            value: "{LocalModel>Time_Wednesday}",
+                            valueState: "{=${LocalModel>Active_Wednesday} === true?'Success':'None'}",
+                            enabled: "{LocalModel>Active_Wednesday}",
+                            editable: "{LocalModel>Active_Wednesday}",
+                            liveChange: this.onLiveChange
+                        }), new Input({
+                            id:"inpThursday",
+                            value: "{LocalModel>Time_Thursday}",
+                            valueState: "{=${LocalModel>Active_Thursday} === true?'Success':'None'}",
+                            enabled: "{LocalModel>Active_Thursday}",
+                            editable: "{LocalModel>Active_Thursday}",
+                            liveChange: this.onLiveChange
+                        }), new Input({
+                            id:"inpFriday",
+                            value: "{LocalModel>Time_Friday}",
+                            valueState: "{=${LocalModel>Active_Friday} === true?'Success':'None'}",
+                            enabled: "{LocalModel>Active_Friday}",
+                            editable: "{LocalModel>Active_Friday}",
+                            liveChange: this.onLiveChange
+                        }), new Input({
+                            id:"inpSaturday",
+                            value: "{LocalModel>Time_Saturday}",
+                            valueState: "{=${LocalModel>Active_Saturday} === true?'Success':'None'}",
+                            enabled: "{LocalModel>Active_Saturday}",
+                            editable: "{LocalModel>Active_Saturday}",
+                            liveChange: this.onLiveChange
+                        }), new Input({
+                            id:"inpSunday",
+                            value: "{LocalModel>Time_Sunday}",
+                            valueState: "{=${LocalModel>Active_Sunday} === true?'Success':'None'}",
+                            enabled: "{LocalModel>Active_Sunday}",
+                            editable: "{LocalModel>Active_Sunday}",
+                            liveChange: this.onLiveChange
+                        })*/
         });
     });

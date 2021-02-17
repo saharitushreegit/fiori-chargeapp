@@ -13,7 +13,7 @@
         "ach": "ach",
         "dataSources": {
             "mainService": {
-                "uri": "/v2/charge-app/",
+                "uri": "/v2/pal2/",
                 "type": "OData",
                 "settings": {
                     "odataVersion": "2.0",
