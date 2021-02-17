@@ -104,14 +104,36 @@
             },
             "routes": [
                 {
-                    "name": "Overview",
+                    "name": "Launchpad",
                     "pattern": "",
+                    "target": [
+                        "Launchpad"
+                    ]
+                },
+                {
+                    "name": "Overview",
+                    "pattern": "MaintainCharge",
+                    "target": [
+                        "Overview"
+                    ]
+                },
+                {
+                    "name": "Admin",
+                    "pattern": "Admin",
                     "target": [
                         "Overview"
                     ]
                 }
+
             ],
             "targets": {
+                "Launchpad":{
+                    "viewType": "XML",
+                    "transition": "slide",
+                    "clearControlAggregation": false,
+                    "viewId": "Launchpad",
+                    "viewName": "Launchpad"
+                },   
                 "Overview": {
                     "viewType": "XML",
                     "transition": "slide",
