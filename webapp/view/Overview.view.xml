@@ -48,17 +48,10 @@
 					<OverflowToolbar id="otbSubheader">
                         <Title id="tbHeaderTitle" level="H2" />
                         <ToolbarSpacer />
-                        <Button id="btCopyfromCentral" text="Copy From Central" visible="false"
-                            press="handleCopyFromCentral" type="Default" />
-                        <Button id="editButton" text="Edit" 
-                            press="handleEdit" />
-                        
-                        <Button id="btCreate" text="Save" 
-							press="handleCreateBatch" visible="false" />
-                        <Button id="saveButton" text="Save" 
-							press="handleSave" visible="false" />
-						<Button id="cancelButton" text="Cancel" 
-							press="handleCancel" visible="false" />   
+                        <Button id="editButton" text="Edit" press="handleEdit" visible="false"/>
+                        <Button id="btCreateCharge" text="Save" press="handleChargeCreate" visible="false" />
+                        <Button id="saveButton" text="Save" press="handleChargeUpdate" visible="false" />
+						<Button id="cancelButton" text="Cancel" press="handleCancel" visible="false" />   
 					</OverflowToolbar>
 				</headerToolbar>
 				<columns>
@@ -133,5 +126,6 @@
 					</ColumnListItem>
 				</items>
             </Table>
+            <Link id="linkAddCharge" class="test-right-float" press="handleAddCreateCharge" text="Add Charge" visible="false"/>
     </Page>
 </mvc:View>

@@ -26,7 +26,8 @@ sap.ui.define([
             },
 
             handleTileAdmin:function(oEvent){
-                this.getRouter().navTo("Admin");
+               // this.getRouter().navTo("Admin");
+               alert("In the process of Creation");
             }
 
         });    

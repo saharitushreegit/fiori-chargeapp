@@ -1,6 +1,7 @@
 sap.ui.define([
     //"sap/ui/core/mvc/Controller",
     "./BaseController",
+    "com/sap/fiorichargeapp/model/DataManager",
     "sap/ui/model/json/JSONModel",
     "sap/ui/model/Filter",
     "sap/ui/model/FilterOperator",
@@ -19,28 +20,21 @@ sap.ui.define([
 	/**
 	 * @param {typeof sap.ui.core.mvc.Controller} Controller
 	 */
-    function (BaseController, JSONModel, Filter, FilterOperator, ColumnListItem, Input, ObjectStatus, 
+    function (BaseController,DataManager, JSONModel, Filter, FilterOperator, ColumnListItem, Input, ObjectStatus, 
         deepExtend, ValueState, MessageBox,Fragment,Device,TimePicker,MessageToast) {
         "use strict";
 
         return BaseController.extend("com.sap.fiorichargeapp.controller.Overview", {
             onInit: function () {
                 this.oRouter = new sap.ui.core.UIComponent.getRouterFor(this);
-                var oFilterModel = new JSONModel({
+                 var oFilterModel = new JSONModel({
                     Stores: [],
                     Departments: [],
                     Batches: []
-                })
-
-                //this._mViewSettingsDialogs={};
+                });
                 this.getView().setModel(oFilterModel, "LocalModel");
-                this.byId("editButton").setVisible(false);
-                this.byId("btCreate").setVisible(false);
-                this.byId("cancelButton").setVisible(false);
-                this.byId("saveButton").setVisible(false);
-                
+               
                 this.oReadOnlyTemplate = this.byId("tbCharge").getBindingInfo("items").template;//this.byId("tbCharge").removeItem(0);
-                //this.rebindTable(this.oReadOnlyTemplate, "Navigation");
                 this.initializeEditableTemplate();
                 this.oRouter.attachRouteMatched(this.onRouteMatched, this);
             },
@@ -52,82 +46,67 @@ sap.ui.define([
                     this.loadStores("Admin");
                     this.loadDepartment();
                 }else{
+                    this.getView().byId("cbStore").setValue(" ");
+                    this.getView().byId("cbDepartment").setValue(" ");
                     this.loadStores();
                     this.loadDepartment();
                 }
-
             },
 
             loadStores: function (strRole) {
 
                 var oLocalModel = this.getView().getModel("LocalModel");
                 var oModel = this.getOwnerComponent().getModel();//this.getView().getModel();
-                var tempFilter=[];
+                var filter=[];
                 if(strRole === "Admin"){
-                    tempFilter.push(new Filter("StoreID", FilterOperator.EQ, '9999'));
+                    filter.push(new Filter("StoreID", FilterOperator.EQ, '9999'));
                 }else{
-                    tempFilter.push(new Filter("StoreID", FilterOperator.NE, '9999'));
+                    filter.push(new Filter("StoreID", FilterOperator.NE, '9999'));
                 }
-                
-                oModel.read("/Stores", {
-                    filters: tempFilter,
-                    success: $.proxy(function (oData) {
-                        oLocalModel.setProperty("/Stores", oData.results);
-                    }, this),
-                    failed: $.proxy(function (oError) {
 
-                    }, this)
+                DataManager.read(oModel,"/Stores",filter,"",jQuery.proxy(function(oData) {
+                    oLocalModel.setProperty("/Stores", oData.results);
+                },this), jQuery.proxy(function(oError){
 
-                })
-
-            },
+                },this));
+             },
 
             loadDepartment: function () {
-                console.log("loadDepartment");
                 var oLocalModel = this.getView().getModel("LocalModel");
                 var oModel = this.getOwnerComponent().getModel();//this.getView().getModel();
 
-                oModel.read("/Departments", {
-                    success: $.proxy(function (oData) {
-                        oLocalModel.setProperty("/Departments", oData.results);
-                    }, this),
-                    failed: $.proxy(function (oError) {
-                        console.log(oError)
-                    }, this)
+                DataManager.read(oModel,"/Departments","","",jQuery.proxy(function(oData) {
+                    oLocalModel.setProperty("/Departments", oData.results);
+                },this), jQuery.proxy(function(oError){
 
-                })
+                },this));
             },
 
             handleStoreChange: function (oEvent) {
-                console.log("handleStoreChange");
                 var oLocalModel = this.getView().getModel("LocalModel");
                 var oModel = this.getOwnerComponent().getModel();
-                var filters = [];
+                var filter = [];
                 var selectedStore = oEvent.oSource.getSelectedKey();
                 var cbDepartment =this.getView().byId("cbDepartment");
-                console.log("selectedStore >>"+selectedStore);
+               
                 if (selectedStore.length > 0) {
-                    filters = [new sap.ui.model.Filter("StoreID", sap.ui.model.FilterOperator.EQ, selectedStore)];
+                    filter = [new sap.ui.model.Filter("StoreID", sap.ui.model.FilterOperator.EQ, selectedStore)];
                 }
 
-                oModel.read("/StoresToDepartments", {
-                    filters:filters,
-                    success: $.proxy(function (oData) {
-                        var filterDep=[];
-                        for (var i = 0; i < oData.results.length; i++) {
-                            filterDep.push(new Filter("DepartmentID" , FilterOperator.EQ, oData.results[i].DepartmentID));
-                        }
-                        cbDepartment.getBinding("items").filter(filterDep);
-                        cbDepartment.setSelectedItemId("");
-                    }, this),
-                    failed: $.proxy(function (oError) {
+                DataManager.read(oModel,"/StoresToDepartments",filter,"",jQuery.proxy(function(oData) {
+                    var filterDep=[];
+                    for (var i = 0; i < oData.results.length; i++) {
+                        filterDep.push(new Filter("DepartmentID" , FilterOperator.EQ, oData.results[i].DepartmentID));
+                    }
+                    cbDepartment.getBinding("items").filter(filterDep);
+                    cbDepartment.setSelectedItemId("");
+                },this), jQuery.proxy(function(oError){
 
-                    }, this)
-
-                })
+                },this));
             },
 
             handleOnSearch: function (oEvent) {
+
                 var oLocalModel = this.getView().getModel("LocalModel");
                 var oModel = this.getOwnerComponent().getModel();
                 
@@ -142,35 +121,66 @@ sap.ui.define([
                 var storeFilter = new Filter("Store_StoreID", FilterOperator.EQ, strStore);
                 var depFilter = new Filter("Department_DepartmentID", FilterOperator.EQ, strDepartmentID);
 
-                var tempFilter = []
-                tempFilter.push(storeFilter);
-                tempFilter.push(depFilter);
+                var filter = []
+                filter.push(storeFilter);
+                filter.push(depFilter);
 
-                oModel.read("/Batches", {
-                    filters: tempFilter,
-                    urlParameters: {
-                        "$expand": "Store,Department"
-                    },
-                    success: $.proxy(function (oData) {
+                var expand = "Store,Department"
 
+                DataManager.read(oModel,"/Batches",filter,expand,jQuery.proxy(function(oData) {
+                    if(oData.results.length >0){
                         for (var i = 0; i < oData.results.length; i++) {
                             oData.results[i].UpdatedBatch = false;
                         }
                         oLocalModel.setProperty("/Batches", oData.results);
-                        if(oData.results.length >0){
-                            this.byId("editButton").setVisible(true);
-                            this.byId("btCopyfromCentral").setVisible(false);
-                        }else{
-                            this.byId("btCopyfromCentral").setVisible(true);
+                        this.byId("editButton").setVisible(true);
+                        this.byId("btCreateCharge").setVisible(false);
+                    }else{
+                        this.loadCentralStoreCharge();
+                        $.when(this.loadCentralStoreDeferred).done($.proxy(function() {
+                            var tempBatchCentral = this.arrBatchCentral;
+                            this.arrBatchCentral=[];
+                            for (var i = 0; i < tempBatchCentral.length; i++) {
+                                tempBatchCentral[i].ID=""
+                                tempBatchCentral[i].Store_StoreID=strStore;
+                                tempBatchCentral[i].UpdatedBatch = false;
+                            }
+                            oLocalModel.setProperty("/Batches", tempBatchCentral);
+                            this.rebindTable(this.oEditableTemplate, "Edit");   
                             this.byId("editButton").setVisible(false);
-                        }        
-                        this.getView().byId("tbHeaderTitle").setText("Store : " + strStore + " - " + valBaf);
-                    }, this),
-                    failed: $.proxy(function (oError) {
+                            this.byId("btCreateCharge").setVisible(true);
+                            this.byId("linkAddCharge").setVisible(true);
+                        }, this));
+                    }        
+                    this.getView().byId("tbHeaderTitle").setText("Store : " + strStore + " - " + valDepartDesc);;
+                },this), jQuery.proxy(function(oError){
 
-                    }, this)
+                },this));
+            },
 
-                }, this)
+
+            loadCentralStoreCharge:function(){
+
+                this.loadCentralStoreDeferred = $.Deferred();
+
+                var oLocalModel = this.getView().getModel("LocalModel");
+                var oModel = this.getOwnerComponent().getModel();//this.getView().getModel();
+
+                var strDepartmentID = this.getView().byId("cbDepartment").getSelectedKey();
+                
+                var storeFilter = new Filter("Store_StoreID", FilterOperator.EQ, '9999');
+                var deptFilter = new Filter("Department_DepartmentID", FilterOperator.EQ, strDepartmentID);
+
+                var filter = []
+                filter.push(storeFilter);
+                filter.push(deptFilter);
+
+                DataManager.read(oModel,"/Batches",filter,"",jQuery.proxy(function(oData) {
+                    this.arrBatchCentral = oData.results;
+                    this.loadCentralStoreDeferred.resolve();
+                },this), jQuery.proxy(function(oError){
+                   this.loadCentralStoreDeferred.reject();     
+                },this));
             },
 
             initializeEditableTemplate: function () {
@@ -247,15 +257,17 @@ sap.ui.define([
                 }).setKeyboardMode(sKeyboardMode);
             },
 
-            handleEdit: function () {
+            handleEdit: function (oEvent) {
                 this.aProductCollection = deepExtend([], this.getView().getModel("LocalModel").getProperty("/Batches"));
                 this.byId("editButton").setVisible(false);
                 this.byId("saveButton").setVisible(true);
                 this.byId("cancelButton").setVisible(true);
+                this.byId("linkAddCharge").setVisible(true);
+                
                 this.rebindTable(this.oEditableTemplate, "Edit");
             },
 
-            handleSave: function () {
+            handleChargeUpdate: function (oEvent) {
 
                 var oModel = this.getOwnerComponent().getModel();//this.getView().getModel();
                 var oLocalModel = this.getView().getModel("LocalModel");
@@ -264,6 +276,9 @@ sap.ui.define([
                 var chargeData = oLocalModel.getProperty("/Batches");
                 var nRecords = 0;
                 var nRecUpdated = 0;
+
+
+                /// segregate update and new creation
                 MessageBox.confirm("Do you want to Update Charge ?", {
                     title: "Confirm",
                     onClose: $.proxy(function (oAction) {
@@ -271,27 +286,9 @@ sap.ui.define([
 
                             for (var i = 0; i < chargeData.length; i++) {
                                 strDepdesc = chargeData[i].Department.DepartmentDescription;
-                                if (chargeData[i].UpdatedBatch === true) {
+                                if (chargeData[i].ID !=="" && chargeData[i].UpdatedBatch === true) {
                                     nRecords++;
-                                    var payload = {
-                                        "Store_StoreID": chargeData[i].Store_StoreID,
-                                        "Department_DepartmentID": chargeData[i].Department_DepartmentID,
-                                        "BatchID": chargeData[i].BatchID,
-                                        "Active_Monday": chargeData[i].Active_Monday,
-                                        "Active_Tuesday": chargeData[i].Active_Tuesday,
-                                        "Active_Wednesday": chargeData[i].Active_Wednesday,
-                                        "Active_Thursday": chargeData[i].Active_Thursday,
-                                        "Active_Friday": chargeData[i].Active_Friday,
-                                        "Active_Saturday": chargeData[i].Active_Saturday,
-                                        "Active_Sunday": chargeData[i].Active_Sunday,
-                                        "Time_Monday": chargeData[i].Time_Monday,
-                                        "Time_Tuesday": chargeData[i].Time_Tuesday,
-                                        "Time_Wednesday": chargeData[i].Time_Wednesday,
-                                        "Time_Thursday": chargeData[i].Time_Thursday,
-                                        "Time_Friday": chargeData[i].Time_Friday,
-                                        "Time_Saturday": chargeData[i].Time_Saturday,
-                                        "Time_Sunday": chargeData[i].Time_Sunday,
-                                    }
+                                    var payload = this.requestPayload(chargeData[i]);
                                     oModel.update("/Batches(guid'"+chargeData[i].ID+"')", payload, {
                                         success: $.proxy(function (oData) {
                                             nRecUpdated++;
@@ -317,6 +314,30 @@ sap.ui.define([
                 });
             },
 
+            requestPayload:function(chargeData){
+                var payload = {
+                    "Store_StoreID": chargeData.Store_StoreID,
+                    "Department_DepartmentID": chargeData.Department_DepartmentID,
+                    "BatchID": chargeData.BatchID,
+                    "Active_Monday": chargeData.Active_Monday,
+                    "Active_Tuesday": chargeData.Active_Tuesday,
+                    "Active_Wednesday": chargeData.Active_Wednesday,
+                    "Active_Thursday": chargeData.Active_Thursday,
+                    "Active_Friday": chargeData.Active_Friday,
+                    "Active_Saturday": chargeData.Active_Saturday,
+                    "Active_Sunday": chargeData.Active_Sunday,
+                    "Time_Monday": chargeData.Time_Monday,
+                    "Time_Tuesday": chargeData.Time_Tuesday,
+                    "Time_Wednesday": chargeData.Time_Wednesday,
+                    "Time_Thursday": chargeData.Time_Thursday,
+                    "Time_Friday": chargeData.Time_Friday,
+                    "Time_Saturday": chargeData.Time_Saturday,
+                    "Time_Sunday": chargeData.Time_Sunday,
+                }
+
+                return payload;
+            },
+
             handleCancel: function () {
                 this.byId("cancelButton").setVisible(false);
                 this.byId("saveButton").setVisible(false);
@@ -326,7 +347,7 @@ sap.ui.define([
             },
 
             handleChange: function (oEvent) {
-                console.log("tset");
+               
                 var oLocalModel = this.getModel("LocalModel");
                 var i = oEvent.getSource();
                 var inpId = oEvent.getParameter("id");
@@ -354,7 +375,8 @@ sap.ui.define([
 							oLocalModel.setProperty("/Batches", chargeData);
 							oModel.remove("/Batches(guid'"+selectedBatch.ID+"')", {
 								success: $.proxy(function() {
-										MessageToast.show("Charge "+selectedBatch.BatchID+" for Department "+ selectedBatch.Department.DepartmentDescription + " is deleted.");
+                                    this.byId("editButton").setVisible(false);
+									MessageToast.show("Charge "+selectedBatch.BatchID+" for Department "+ selectedBatch.Department.DepartmentDescription + " is deleted.");
 								}, this),
 								error: $.proxy(function() {
 									
@@ -365,9 +387,107 @@ sap.ui.define([
                 });    
             },
 
+            handleChargeCreate:function(oEvent){
+
+                var strStore = this.getView().byId("cbStore").getSelectedKey();
+                var strBaf = this.getView().byId("cbDepartment").getSelectedKey();
+                var oModel = this.getOwnerComponent().getModel(); //this.getView().getModel();
+                var oLocalModel = this.getView().getModel("LocalModel");
+
+                var chargeData = oLocalModel.getProperty("/Batches");
+                var nRecords=0;
+                var nRecCreated=0;
+                MessageBox.confirm("Do you want to Create a Charge for Store "+strStore+" and Department "+strBaf+"?", {
+                    title: "Confirm",
+                    onClose: $.proxy(function (oAction) {
+                        if (oAction === MessageBox.Action.OK) {
+
+                            //oModel.setDeferredGroups(["CreateBatch"]);
+                            for (var i = 0; i < chargeData.length; i++) {
+                                nRecords++;
+                                var payload = {
+                                    "Store_StoreID": chargeData[i].Store_StoreID,
+                                    "Department_DepartmentID": chargeData[i].Department_DepartmentID,
+                                    "BatchID": chargeData[i].BatchID,
+                                    "Active_Monday": chargeData[i].Active_Monday,
+                                    "Active_Tuesday": chargeData[i].Active_Tuesday,
+                                    "Active_Wednesday": chargeData[i].Active_Wednesday,
+                                    "Active_Thursday": chargeData[i].Active_Thursday,
+                                    "Active_Friday": chargeData[i].Active_Friday,
+                                    "Active_Saturday": chargeData[i].Active_Saturday,
+                                    "Active_Sunday": chargeData[i].Active_Sunday,
+                                    "Time_Monday": chargeData[i].Time_Monday,
+                                    "Time_Tuesday": chargeData[i].Time_Tuesday,
+                                    "Time_Wednesday": chargeData[i].Time_Wednesday,
+                                    "Time_Thursday": chargeData[i].Time_Thursday,
+                                    "Time_Friday": chargeData[i].Time_Friday,
+                                    "Time_Saturday": chargeData[i].Time_Saturday,
+                                    "Time_Sunday": chargeData[i].Time_Sunday,
+                                }
+                                oModel.create("/Batches", payload, {
+                                    success: $.proxy(function (oData) {
+                                        nRecCreated++;
+                                        this.byId("btCreateCharge").setVisible(false);
+                                        this.byId("cancelButton").setVisible(false);
+                                        this.byId("linkAddCharge").setVisible(false);
+                                        this.byId("editButton").setVisible(true);
+                                        if (nRecords === nRecCreated) {
+                                            this.rebindTable(this.oReadOnlyTemplate, "Navigation");
+                                        }
+                                    }, this),
+                                    error: $.proxy(function () {
+
+                                    }, this)
+                                });
+                            }
+                            //oModel.submitChanges("CreateBatch");
+                        }
+                    },this)   
+                });
+            },
+
+            handleAddCreateCharge:function(oEvent){
+
+                var oLocalModel =this.getView().getModel("LocalModel");
+                var strStore = this.getView().byId("cbStore").getSelectedKey();
+                var strDept = this.getView().byId("cbDepartment").getSelectedKey();
+
+               
+                var aCollection = oLocalModel.getProperty("/Batches");
+                var nRecords = aCollection.length;
+                ++nRecords;
+                var newEntry =  {
+					"BatchID": nRecords,
+					"Active_Monday": true,
+                    "Time_Monday": null,
+                    "Active_Tuesday": true,
+                    "Time_Tuesday": null,
+                    "Active_Wednesday": true,
+                    "Time_Wednesday": null,
+                    "Active_Thursday": true,
+                    "Time_Thursday": null,
+                    "Active_Friday": true,
+                    "Time_Friday": null,
+                    "Active_Saturday": true,
+                    "Time_Saturday": null,
+                    "Active_Sunday": true,
+                    "Time_Sunday": null,
+                    "Store_StoreID":strStore,
+                    "Department_DepartmentID":strDept
+				};
+                
+                this.byId("saveButton").setVisible(true);
+                this.byId("cancelButton").setVisible(true);
+                //this.rebindTable(this.oEditableTemplate, "Edit");
+                aCollection.push(newEntry);
+			    oLocalModel.setProperty("/Batches", aCollection);
+            }
+
             
 
-            handleCopyFromCentral:function(){
+    /**** not used ****/      
+    
+    /*handleCopyFromCentral:function(){
                 var oLocalModel = this.getView().getModel("LocalModel");
                 var oModel = this.getOwnerComponent().getModel();//this.getView().getModel();
 
@@ -398,69 +518,8 @@ sap.ui.define([
 
                     }, this)
                 }, this)
-            },
+            },*/
 
-            handleCreateBatch:function(oEvent){
-
-                var strStore = this.getView().byId("cbStore").getSelectedKey();
-                var strBaf = this.getView().byId("cbDepartment").getSelectedKey();
-                var oModel = this.getOwnerComponent().getModel(); //this.getView().getModel();
-                var oLocalModel = this.getView().getModel("LocalModel");
-
-                var chargeData = oLocalModel.getProperty("/Batches");
-                var nRecords=0;
-                var nRecCreated=0;
-                MessageBox.confirm("Do you want to Create a Charge for Store "+strStore+" and Department "+strBaf+"?", {
-                    title: "Confirm",
-                    onClose: $.proxy(function (oAction) {
-                        if (oAction === MessageBox.Action.OK) {
-
-                            //oModel.setDeferredGroups(["CreateBatch"]);
-                            for (var i = 0; i < chargeData.length; i++) {
-                                nRecords++;
-                                var payload = {
-                                    "Store_StoreID": chargeData[i].StoreID,
-                                    "Department_DepartmentID": chargeData[i].Department_DepartmentID,
-                                    "BatchID": chargeData[i].BatchID,
-                                    "Active_Monday": chargeData[i].Active_Monday,
-                                    "Active_Tuesday": chargeData[i].Active_Tuesday,
-                                    "Active_Wednesday": chargeData[i].Active_Wednesday,
-                                    "Active_Thursday": chargeData[i].Active_Thursday,
-                                    "Active_Friday": chargeData[i].Active_Friday,
-                                    "Active_Saturday": chargeData[i].Active_Saturday,
-                                    "Active_Sunday": chargeData[i].Active_Sunday,
-                                    "Time_Monday": chargeData[i].Time_Monday,
-                                    "Time_Tuesday": chargeData[i].Time_Tuesday,
-                                    "Time_Wednesday": chargeData[i].Time_Wednesday,
-                                    "Time_Thursday": chargeData[i].Time_Thursday,
-                                    "Time_Friday": chargeData[i].Time_Friday,
-                                    "Time_Saturday": chargeData[i].Time_Saturday,
-                                    "Time_Sunday": chargeData[i].Time_Sunday,
-                                }
-                                oModel.create("/Batches", payload, {
-                                    success: $.proxy(function (oData) {
-                                        nRecCreated++;
-                                        this.byId("btCreate").setVisible(false);
-                                        this.byId("cancelButton").setVisible(false);
-                                        this.byId("editButton").setVisible(true);
-                                        if (nRecords === nRecCreated) {
-                                            this.rebindTable(this.oReadOnlyTemplate, "Navigation");
-                                        }
-                                    }, this),
-                                    error: $.proxy(function () {
-
-                                    }, this)
-                                });
-                            }
-                            //oModel.submitChanges("CreateBatch");
-                        }
-                    },this)   
-                });
-            }
-
-            
-
-    /**** not used ****/        
 
     /*getViewSettingsDialog: function (sDialogFragmentName) {
                 var pDialog = this._mViewSettingsDialogs[sDialogFragmentName];
