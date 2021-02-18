@@ -126,6 +126,6 @@
 					</ColumnListItem>
 				</items>
             </Table>
-            <Link id="linkAddCharge" class="test-right-float" press="handleAddCreateCharge" text="Add Charge" visible="false"/>
+            <Link id="linkAddCharge" class="test-right-float" press="handleAddNewCharge" text="Add Charge" visible="false"/>
     </Page>
 </mvc:View>

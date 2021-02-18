@@ -41,13 +41,17 @@ sap.ui.define([
 
             onRouteMatched: function (oEvent) {
                 var oNameParameter = oEvent.getParameter("name");
+                var oView = this.getView();
                 console.log("oNameParameter -->" + oNameParameter);
                 if(oNameParameter === "Admin"){
                     this.loadStores("Admin");
                     this.loadDepartment();
                 }else{
-                    this.getView().byId("cbStore").setValue(" ");
-                    this.getView().byId("cbDepartment").setValue(" ");
+                    oView.byId("cbStore").setValue(" ");
+                    oView.byId("cbDepartment").setValue(" ");
+                    oView.getModel("LocalModel").setProperty("/Batches",[]);
+                    oView.getModel("LocalModel").setProperty("/Stores",[]);
+                    oView.getModel("LocalModel").setProperty("/Departments",[]);
                     this.loadStores();
                     this.loadDepartment();
                 }
@@ -58,12 +62,9 @@ sap.ui.define([
                 var oLocalModel = this.getView().getModel("LocalModel");
                 var oModel = this.getOwnerComponent().getModel();//this.getView().getModel();
                 var filter=[];
-                if(strRole === "Admin"){
-                    filter.push(new Filter("StoreID", FilterOperator.EQ, '9999'));
-                }else{
-                    filter.push(new Filter("StoreID", FilterOperator.NE, '9999'));
-                }
-
+                
+                filter.push(new Filter("StoreID", FilterOperator.NE, '9999'));
+                
                 DataManager.read(oModel,"/Stores",filter,"",jQuery.proxy(function(oData) {
                     oLocalModel.setProperty("/Stores", oData.results);
                 },this), jQuery.proxy(function(oError){
@@ -118,6 +119,8 @@ sap.ui.define([
                 var strDepartmentID = cbDepartment.getSelectedKey();
                 var valDepartDesc = cbDepartment.getValue();
 
+                oLocalModel.setProperty("/Batches",[]);
+
                 var storeFilter = new Filter("Store_StoreID", FilterOperator.EQ, strStore);
                 var depFilter = new Filter("Department_DepartmentID", FilterOperator.EQ, strDepartmentID);
 
@@ -139,25 +142,32 @@ sap.ui.define([
                         this.loadCentralStoreCharge();
                         $.when(this.loadCentralStoreDeferred).done($.proxy(function() {
                             var tempBatchCentral = this.arrBatchCentral;
-                            this.arrBatchCentral=[];
-                            for (var i = 0; i < tempBatchCentral.length; i++) {
-                                tempBatchCentral[i].ID=""
-                                tempBatchCentral[i].Store_StoreID=strStore;
-                                tempBatchCentral[i].UpdatedBatch = false;
-                            }
-                            oLocalModel.setProperty("/Batches", tempBatchCentral);
-                            this.rebindTable(this.oEditableTemplate, "Edit");   
-                            this.byId("editButton").setVisible(false);
-                            this.byId("btCreateCharge").setVisible(true);
-                            this.byId("linkAddCharge").setVisible(true);
+                            if(tempBatchCentral.length >0){
+                                this.arrBatchCentral=[];
+                                for (var i = 0; i < tempBatchCentral.length; i++) {
+                                    tempBatchCentral[i].ID="";
+                                    tempBatchCentral[i].Store_StoreID=strStore;
+                                    tempBatchCentral[i].UpdatedBatch = false;
+                                }
+                                oLocalModel.setProperty("/Batches", tempBatchCentral);
+                                this.rebindTable(this.oEditableTemplate, "Edit");   
+                                this.byId("editButton").setVisible(false);
+                                this.byId("cancelButton").setVisible(false);
+                                this.byId("btCreateCharge").setVisible(true);
+                                this.byId("linkAddCharge").setVisible(true);
+                            }else{
+                                this.byId("editButton").setVisible(false);
+                                this.byId("cancelButton").setVisible(false);
+                                this.byId("btCreateCharge").setVisible(false);
+                                this.byId("linkAddCharge").setVisible(true);
+                            }    
                         }, this));
-                    }        
-                    this.getView().byId("tbHeaderTitle").setText("Store : " + strStore + " - " + valDepartDesc);;
+                    }       
+                    this.updateTableTitle(); 
                 },this), jQuery.proxy(function(oError){
 
                 },this));
             },
-
 
             loadCentralStoreCharge:function(){
 
@@ -181,6 +191,15 @@ sap.ui.define([
                 },this), jQuery.proxy(function(oError){
                    this.loadCentralStoreDeferred.reject();     
                 },this));
+            },
+
+            updateTableTitle:function(){
+                var oView = this.getView();
+                var strStore = oView.byId("cbStore").getSelectedKey();
+                var strDepartmentDesc = oView.byId("cbDepartment").getValue();
+                
+                oView.byId("tbHeaderTitle").setText("Store : " + strStore + " - " + strDepartmentDesc);;
+                
             },
 
             initializeEditableTemplate: function () {
@@ -263,55 +282,120 @@ sap.ui.define([
                 this.byId("saveButton").setVisible(true);
                 this.byId("cancelButton").setVisible(true);
                 this.byId("linkAddCharge").setVisible(true);
-                
+                this.updateTableTitle();
                 this.rebindTable(this.oEditableTemplate, "Edit");
+            },
+
+            handleCancel: function () {
+                this.byId("cancelButton").setVisible(false);
+                this.byId("saveButton").setVisible(false);
+                this.byId("editButton").setVisible(true);
+                this.getView().getModel("LocalModel").setProperty("/Batches", this.aProductCollection);
+                this.updateTableTitle();
+                this.rebindTable(this.oReadOnlyTemplate, "Navigation");
+            },
+
+            handleChange: function (oEvent) {
+               
+                var oLocalModel = this.getModel("LocalModel");
+                var i = oEvent.getSource();
+                var inpId = oEvent.getParameter("id");
+                var value = oEvent.getParameter("value");
+
+                var sPath = i.getParent().getBindingContext("LocalModel").sPath;
+                oLocalModel.setProperty(sPath + "/UpdatedBatch", true);
             },
 
             handleChargeUpdate: function (oEvent) {
 
+                 this.chargeUpdateDeferred = $.Deferred();
+
                 var oModel = this.getOwnerComponent().getModel();//this.getView().getModel();
                 var oLocalModel = this.getView().getModel("LocalModel");
 
+                var strStore = this.getView().byId("cbStore").getSelectedKey();
+                var valDept = this.getView().byId("cbDepartment").getValue();
+
                 var strDepdesc ="";
-                var chargeData = oLocalModel.getProperty("/Batches");
                 var nRecords = 0;
+                var nRecordsCreated = 0;
                 var nRecUpdated = 0;
+                var nRecCreated = 0;
+                
+                var chargeData = oLocalModel.getProperty("/Batches");
+                //separate the list for update and create.
+                var chargeDataUpdated=chargeData.filter(function(data){
+                    return data.ID !== "";
+                });
 
-
+                var chargeDataCreated=chargeData.filter(function(data){
+                    return data.ID === "";
+                });
+                this.updateTableTitle();
+                
                 /// segregate update and new creation
                 MessageBox.confirm("Do you want to Update Charge ?", {
                     title: "Confirm",
                     onClose: $.proxy(function (oAction) {
                         if (oAction === MessageBox.Action.OK) {
 
-                            for (var i = 0; i < chargeData.length; i++) {
-                                strDepdesc = chargeData[i].Department.DepartmentDescription;
-                                if (chargeData[i].ID !=="" && chargeData[i].UpdatedBatch === true) {
-                                    nRecords++;
-                                    var payload = this.requestPayload(chargeData[i]);
-                                    oModel.update("/Batches(guid'"+chargeData[i].ID+"')", payload, {
+                            for (var i = 0; i < chargeDataUpdated.length; i++) {
+                                strDepdesc = chargeDataUpdated[i].Department.DepartmentDescription;
+                                if (chargeDataUpdated[i].ID !=="" && chargeDataUpdated[i].UpdatedBatch === true) {
+                                    nRecords=nRecords+1;
+                                    var payload = this.requestPayload(chargeDataUpdated[i]);
+                                    oModel.update("/Batches(guid'"+chargeDataUpdated[i].ID+"')", payload, {
                                         success: $.proxy(function (oData) {
-                                            nRecUpdated++;
-                                            this.byId("saveButton").setVisible(false);
-                                            this.byId("cancelButton").setVisible(false);
-                                            this.byId("editButton").setVisible(true);
+                                            nRecUpdated=nRecUpdated+1;
                                             if (nRecords === nRecUpdated) {
-                                                if(nRecords === 1)
-                                                    MessageToast.show("Charge for Department "+ strDepdesc + " are updated.");
-                                                else
-                                                    MessageToast.show("Charges for Department "+ strDepdesc + " are updated.");
-                                                this.rebindTable(this.oReadOnlyTemplate, "Navigation");
+                                                this.chargeUpdateDeferred.resolve();
                                             }
                                         }, this),
                                         error: $.proxy(function (error) {
-                                            MessageToast.show(error);    
+                                            MessageToast.show(error); 
+                                            this.chargeUpdateDeferred.reject();   
                                         }, this)
                                     });
+                                }else{
+                                    this.chargeUpdateDeferred.resolve();
                                 }
                             }
+
+                            //create charges
+                            $.when(this.chargeUpdateDeferred).done($.proxy(function() {
+                                if(chargeDataCreated.length >0){
+                                    for (var i = 0; i < chargeDataCreated.length; i++) {
+                                        nRecordsCreated=nRecordsCreated+1;
+                                        var payload = this.requestPayload(chargeDataCreated[i]);
+                                        oModel.create("/Batches", payload, {
+                                            success: $.proxy(function (oData) {
+                                                nRecCreated=nRecCreated+1;
+                                                if (nRecordsCreated === nRecCreated) {
+                                                     this.changeButtonVisibility();
+                                                }
+                                            }, this),
+                                            error: $.proxy(function () {
+                                                MessageToast.show(error); 
+                                            }, this)
+                                        });
+                                    } 
+                                }else{
+                                    this.changeButtonVisibility();
+                                }   
+                            }, this));
+
                         }
                     },this)   
                 });
+            },
+
+            changeButtonVisibility:function(){
+                this.byId("btCreateCharge").setVisible(false);
+                this.byId("cancelButton").setVisible(false);
+                this.byId("linkAddCharge").setVisible(false);
+                this.byId("saveButton").setVisible(false);
+                this.byId("editButton").setVisible(true);
+                this.rebindTable(this.oReadOnlyTemplate, "Navigation");
             },
 
             requestPayload:function(chargeData){
@@ -338,24 +422,7 @@ sap.ui.define([
                 return payload;
             },
 
-            handleCancel: function () {
-                this.byId("cancelButton").setVisible(false);
-                this.byId("saveButton").setVisible(false);
-                this.byId("editButton").setVisible(true);
-                this.getView().getModel("LocalModel").setProperty("/Batches", this.aProductCollection);
-                this.rebindTable(this.oReadOnlyTemplate, "Navigation");
-            },
-
-            handleChange: function (oEvent) {
-               
-                var oLocalModel = this.getModel("LocalModel");
-                var i = oEvent.getSource();
-                var inpId = oEvent.getParameter("id");
-                var value = oEvent.getParameter("value");
-
-                var sPath = i.getParent().getBindingContext("LocalModel").sPath;
-                oLocalModel.setProperty(sPath + "/UpdatedBatch", true);
-            },
+            
 
             handleChargeDelete:function(oEvent){
 
@@ -367,21 +434,40 @@ sap.ui.define([
                 var indexToDelete = path.substring(path.lastIndexOf("/") + 1);
                 var chargeData = oLocalModel.getProperty("/Batches");
 
+                var valDept = this.getView().byId("cbDepartment").getValue();
+
                 MessageBox.confirm("Are you Sure you want to Delete the Batch ?", {
 				title: "Confirm",
 				onClose: $.proxy(function(oAction) {
                         if (oAction === MessageBox.Action.OK) {
-                            chargeData.splice(indexToDelete, 1);
-							oLocalModel.setProperty("/Batches", chargeData);
-							oModel.remove("/Batches(guid'"+selectedBatch.ID+"')", {
-								success: $.proxy(function() {
-                                    this.byId("editButton").setVisible(false);
-									MessageToast.show("Charge "+selectedBatch.BatchID+" for Department "+ selectedBatch.Department.DepartmentDescription + " is deleted.");
-								}, this),
-								error: $.proxy(function() {
-									
-								}, this)
-							});
+                            if(selectedBatch.ID !== ""){
+                                chargeData.splice(indexToDelete, 1);
+                                oLocalModel.setProperty("/Batches", chargeData);
+                                oModel.remove("/Batches(guid'"+selectedBatch.ID+"')", {
+                                    success: $.proxy(function() {
+                                        this.byId("btCreateCharge").setVisible(false);
+                                        this.byId("cancelButton").setVisible(false);
+                                        this.byId("saveButton").setVisible(false);
+                                        this.byId("editButton").setVisible(false);
+                                        this.byId("linkAddCharge").setVisible(true);
+                                        
+                                        MessageToast.show("Charge "+selectedBatch.BatchID+" for Department "+ valDept + " is deleted.");
+                                    }, this),
+                                    error: $.proxy(function() {
+                                        
+                                    }, this)
+                                });
+                            }else{
+                                chargeData.splice(indexToDelete, 1);
+                                oLocalModel.setProperty("/Batches", chargeData);
+                                this.byId("btCreateCharge").setVisible(false);
+                                this.byId("cancelButton").setVisible(false);
+                                this.byId("saveButton").setVisible(false);
+                                this.byId("editButton").setVisible(false);
+                                this.byId("linkAddCharge").setVisible(true);
+                                MessageToast.show("Charge "+selectedBatch.BatchID+" for Department "+ valDept + " is deleted.");
+                                    
+                            }
                         }
                     },this)   
                 });    
@@ -397,6 +483,7 @@ sap.ui.define([
                 var chargeData = oLocalModel.getProperty("/Batches");
                 var nRecords=0;
                 var nRecCreated=0;
+                this.updateTableTitle();
                 MessageBox.confirm("Do you want to Create a Charge for Store "+strStore+" and Department "+strBaf+"?", {
                     title: "Confirm",
                     onClose: $.proxy(function (oAction) {
@@ -405,34 +492,12 @@ sap.ui.define([
                             //oModel.setDeferredGroups(["CreateBatch"]);
                             for (var i = 0; i < chargeData.length; i++) {
                                 nRecords++;
-                                var payload = {
-                                    "Store_StoreID": chargeData[i].Store_StoreID,
-                                    "Department_DepartmentID": chargeData[i].Department_DepartmentID,
-                                    "BatchID": chargeData[i].BatchID,
-                                    "Active_Monday": chargeData[i].Active_Monday,
-                                    "Active_Tuesday": chargeData[i].Active_Tuesday,
-                                    "Active_Wednesday": chargeData[i].Active_Wednesday,
-                                    "Active_Thursday": chargeData[i].Active_Thursday,
-                                    "Active_Friday": chargeData[i].Active_Friday,
-                                    "Active_Saturday": chargeData[i].Active_Saturday,
-                                    "Active_Sunday": chargeData[i].Active_Sunday,
-                                    "Time_Monday": chargeData[i].Time_Monday,
-                                    "Time_Tuesday": chargeData[i].Time_Tuesday,
-                                    "Time_Wednesday": chargeData[i].Time_Wednesday,
-                                    "Time_Thursday": chargeData[i].Time_Thursday,
-                                    "Time_Friday": chargeData[i].Time_Friday,
-                                    "Time_Saturday": chargeData[i].Time_Saturday,
-                                    "Time_Sunday": chargeData[i].Time_Sunday,
-                                }
+                                var payload = this.requestPayload(chargeData[i]);
                                 oModel.create("/Batches", payload, {
                                     success: $.proxy(function (oData) {
                                         nRecCreated++;
-                                        this.byId("btCreateCharge").setVisible(false);
-                                        this.byId("cancelButton").setVisible(false);
-                                        this.byId("linkAddCharge").setVisible(false);
-                                        this.byId("editButton").setVisible(true);
                                         if (nRecords === nRecCreated) {
-                                            this.rebindTable(this.oReadOnlyTemplate, "Navigation");
+                                            this.changeButtonVisibility();
                                         }
                                     }, this),
                                     error: $.proxy(function () {
@@ -440,23 +505,27 @@ sap.ui.define([
                                     }, this)
                                 });
                             }
-                            //oModel.submitChanges("CreateBatch");
                         }
                     },this)   
                 });
             },
 
-            handleAddCreateCharge:function(oEvent){
+            handleAddNewCharge:function(oEvent){
 
                 var oLocalModel =this.getView().getModel("LocalModel");
                 var strStore = this.getView().byId("cbStore").getSelectedKey();
                 var strDept = this.getView().byId("cbDepartment").getSelectedKey();
 
-               
                 var aCollection = oLocalModel.getProperty("/Batches");
+                //find if new entry created for fresh create or after Edit.
+                //separate the list for update and create.
+                var chargeDataUpdated=aCollection.filter(function(data){
+                    return data.ID !== "";
+                });
                 var nRecords = aCollection.length;
                 ++nRecords;
                 var newEntry =  {
+                    "ID": "",
 					"BatchID": nRecords,
 					"Active_Monday": true,
                     "Time_Monday": null,
@@ -474,11 +543,21 @@ sap.ui.define([
                     "Time_Sunday": null,
                     "Store_StoreID":strStore,
                     "Department_DepartmentID":strDept
-				};
+                };
                 
-                this.byId("saveButton").setVisible(true);
+                if(chargeDataUpdated.length >0){
+                    this.byId("saveButton").setVisible(true);
+                    this.byId("btCreateCharge").setVisible(false);
+                }else{
+                    this.byId("saveButton").setVisible(false);
+                    this.byId("btCreateCharge").setVisible(true);
+                    if(aCollection.length === 0)
+                        this.rebindTable(this.oEditableTemplate, "Edit");
+                    
+                }
+                
                 this.byId("cancelButton").setVisible(true);
-                //this.rebindTable(this.oEditableTemplate, "Edit");
+                //
                 aCollection.push(newEntry);
 			    oLocalModel.setProperty("/Batches", aCollection);
             }
