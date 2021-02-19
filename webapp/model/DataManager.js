@@ -17,6 +17,11 @@ sap.ui.define([], function() {
 				success: jQuery.proxy(fnSuccess, this),
 				error: jQuery.proxy(fnFail, this)
 			});
+        },
+
+
+        update : function(oModel, sPath, payload,fnSuccess, fnFail){
+              oModel.update(sPath, payload , fnSucces, fnFail);
         }
     };
 });

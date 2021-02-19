@@ -7,7 +7,6 @@
     xmlns:fb="sap.ui.comp.filterbar"
     xmlns:core="sap.ui.core"
     core:require="{
-        DateTimeType: 'sap/ui/model/odata/type/DateTime',
         TimeType: 'sap/ui/model/odata/type/Time'
     }">
 	
@@ -28,14 +27,14 @@
                 <fb:filterGroupItems>    
                     <fb:FilterGroupItem groupName="__$INTERNAL$" name="Stores" label="Stores" labelTooltip="Tooltip Example" mandatory="true" partOfCurrentVariant="true" visibleInFilterBar="true">
                         <fb:control>
-                            <ComboBox id="cbStore" items="{ path:'LocalModel>/Stores', sorter: { path: 'StoreID' } }" selectionChange="handleStoreChange">
+                            <ComboBox id="cbStore" items="{ path:'LocalModel>/Stores', sorter: { path: 'StoreName' } }" selectionChange="handleStoreChange">
                                 <core:Item key="{LocalModel>StoreID}" text="{LocalModel>StoreName}"/>    
                             </ComboBox>
                         </fb:control>
                     </fb:FilterGroupItem>
                     <fb:FilterGroupItem groupName="__$INTERNAL$" name="Department" label="Department" labelTooltip="Tooltip Example" mandatory="true" partOfCurrentVariant="true" visibleInFilterBar="true">
                         <fb:control>
-                             <ComboBox id="cbDepartment" items="{ path:'LocalModel>/Departments', sorter: { path: 'DepartmentID' } }">
+                             <ComboBox id="cbDepartment" items="{ path:'LocalModel>/Departments', sorter: { path: 'DepartmentDescription' } }">
                                 <core:Item key="{LocalModel>DepartmentID}" text="{LocalModel>DepartmentDescription}"/>    
                             </ComboBox>
                         </fb:control>
@@ -43,19 +42,116 @@
                 </fb:filterGroupItems>   
             </fb:FilterBar>		
         </l:VerticalLayout>
-        <Table id="tbCharge" growing="true" growingThreshold="10" items="{path:'LocalModel>/Batches'}" mode="Delete" delete="handleChargeDelete">
+        <Panel>
+        <Table id="tbCentralCharge" growing="true" growingThreshold="10" items="{path:'LocalModel>/BatchesCentralStore'}" visible="false">
+            <headerToolbar>
+                <OverflowToolbar id="otbSubheaderC">
+                    <Title id="tbHeaderTitleCentral" level="H4" />
+                    <ToolbarSpacer />
+                </OverflowToolbar>
+            </headerToolbar>
+            <columns>
+                <Column width="10em">
+                    <Text text="Charge Nr" />
+                </Column>
+                <Column minScreenWidth="Tablet" demandPopin="true" hAlign="Center">
+                    <Text text="Mon" />
+                </Column>
+                <Column minScreenWidth="Tablet" demandPopin="true" hAlign="Center">
+                    <Text text="Tues" />
+                </Column>
+                <Column minScreenWidth="Tablet" demandPopin="true" hAlign="Center">
+                    <Text text="Wed" />
+                </Column>
+                <Column minScreenWidth="Tablet" demandPopin="true" hAlign="Center">
+                    <Text text="Thurs" />
+                </Column>
+                <Column minScreenWidth="Tablet" demandPopin="true" hAlign="Center">
+                    <Text text="Fri" />
+                </Column>
+                <Column minScreenWidth="Tablet" demandPopin="true" hAlign="Center">
+                    <Text text="Sat" />
+                </Column>
+                <Column hAlign="Center">
+                    <Text text="Sun" />
+                </Column>
+            </columns>
+            <items>
+                <ColumnListItem>
+                    <cells>
+                        <ObjectStatus
+                            class="sapUiSmallMarginBottom"
+                            text="{LocalModel>BatchID}"
+                            state="None" />
+                        <ObjectStatus 
+                            state="Error"
+                            text="{
+                            path: 'LocalModel>Time_Monday',
+                            type: 'TimeType',
+                            formatOptions: { style: 'medium' }
+                            }" />
+                        <ObjectStatus 
+                            state="Error" 
+                            text="{
+                            path: 'LocalModel>Time_Tuesday',
+                            type: 'TimeType',
+                            formatOptions: { style: 'medium' }
+                            }" />
+                        <ObjectStatus 
+                            state="Error"
+                            text="{
+                            path: 'LocalModel>Time_Wednesday',
+                            type: 'TimeType',
+                            formatOptions: { style: 'medium' }
+                            }" />
+                        <ObjectStatus 
+                            state="Error" 
+                            text="{
+                            path: 'LocalModel>Time_Thursday',
+                            type: 'TimeType',
+                            formatOptions: { style: 'medium' }
+                            }" />
+                        <ObjectStatus 
+                            state="Error"
+                                text="{
+                            path: 'LocalModel>Time_Friday',
+                            type: 'TimeType',
+                            formatOptions: { style: 'medium' }
+                        }" />
+                        <ObjectStatus 
+                            state="Error"
+                                text="{
+                            path: 'LocalModel>Time_Saturday',
+                            type: 'TimeType',
+                            formatOptions: { style: 'medium' }
+                        }" />
+                        <ObjectStatus 
+                            state="Error" 
+                            text="{
+                            path: 'LocalModel>Time_Sunday',
+                            type: 'TimeType',
+                            formatOptions: { style: 'medium' }
+                        }" />
+                    </cells>
+                </ColumnListItem>
+            </items>
+        </Table>
+    
+            <Table id="tbCharge" growing="true" growingThreshold="10" alternateRowColors="true" 
+                items="{path:'LocalModel>/Batches', sorter: { path: 'BatchID' }}" mode="Delete" delete="handleChargeDelete">
 				<headerToolbar>
 					<OverflowToolbar id="otbSubheader">
-                        <Title id="tbHeaderTitle" level="H2" />
+                        <Title id="tbHeaderTitle" level="H4" />
                         <ToolbarSpacer />
                         <Button id="editButton" text="Edit" press="handleEdit" visible="false"/>
-                        <Button id="btCreateCharge" text="Save" press="handleChargeCreate" visible="false" />
+                        <Button id="createChargeButton" text="Save" press="handleChargeCreate" visible="false" />
                         <Button id="saveButton" text="Save" press="handleChargeUpdate" visible="false" />
-						<Button id="cancelButton" text="Cancel" press="handleCancel" visible="false" />   
+                        <Button id="cancelButton" text="Cancel" press="handleCancel" visible="false" />
+                        <Button id="copyCentralButton" text="CopyFromCentral" press="handleCopyFromCentral" visible="false" />      
 					</OverflowToolbar>
 				</headerToolbar>
 				<columns>
-					<Column width="12em">
+					<Column width="10em">
 						<Text text="Charge Nr" />
 					</Column>
 					<Column minScreenWidth="Tablet" demandPopin="true" hAlign="Center">
@@ -127,5 +223,6 @@
 				</items>
             </Table>
             <Link id="linkAddCharge" class="test-right-float" press="handleAddNewCharge" text="Add Charge" visible="false"/>
+        </Panel>    
     </Page>
 </mvc:View>
