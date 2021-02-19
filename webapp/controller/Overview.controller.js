@@ -609,7 +609,7 @@ sap.ui.define([
                 tempFilter.push(storeFilter);
                 tempFilter.push(depFilter);
 
-                DataManager.read(oModel,"/Batches",tempFilter,expand,jQuery.proxy(function(oData) {
+                DataManager.read(oModel,"/Batches",tempFilter,"",jQuery.proxy(function(oData) {
                     for (var i = 0; i < oData.results.length; i++) {
                             oData.results[i].StoreID=strStore;
                             oData.results[i].UpdatedBatch = false;
