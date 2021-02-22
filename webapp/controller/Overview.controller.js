@@ -71,8 +71,11 @@ sap.ui.define([
                 var filter=[];
                 
                 filter.push(new Filter("StoreID", FilterOperator.NE, '9999'));
+
+                var urlParameter = {};
+
                 
-                DataManager.read(oModel,"/Stores",filter,"",jQuery.proxy(function(oData) {
+                DataManager.read(oModel,"/Stores",filter,urlParameter,jQuery.proxy(function(oData) {
                     oLocalModel.setProperty("/Stores", oData.results);
                 },this), jQuery.proxy(function(oError){
 
@@ -83,7 +86,8 @@ sap.ui.define([
                 var oLocalModel = this.getView().getModel("LocalModel");
                 var oModel = this.getOwnerComponent().getModel();//this.getView().getModel();
 
-                DataManager.read(oModel,"/Departments","","",jQuery.proxy(function(oData) {
+                var urlParameter = {};
+                DataManager.read(oModel,"/Departments","",urlParameter,jQuery.proxy(function(oData) {
                     oLocalModel.setProperty("/Departments", oData.results);
                 },this), jQuery.proxy(function(oError){
 
@@ -101,7 +105,9 @@ sap.ui.define([
                     filter = [new sap.ui.model.Filter("StoreID", sap.ui.model.FilterOperator.EQ, selectedStore)];
                 }
 
-                DataManager.read(oModel,"/StoresToDepartments",filter,"",jQuery.proxy(function(oData) {
+                var urlParameter = {};
+
+                DataManager.read(oModel,"/StoresToDepartments",filter,urlParameter,jQuery.proxy(function(oData) {
                     var filterDep=[];
                     for (var i = 0; i < oData.results.length; i++) {
                         filterDep.push(new Filter("DepartmentID" , FilterOperator.EQ, oData.results[i].DepartmentID));
@@ -135,9 +141,14 @@ sap.ui.define([
                 filter.push(storeFilter);
                 filter.push(depFilter);
 
-                var expand = "Store,Department"
+                var expand = "Store,Department";
+                var urlParameter = {
+                    "$expand": expand,
+                    "$orderby":"BatchID"
+				};
+
                 this.loadCentralStoreCharge();
-                DataManager.read(oModel,"/Batches",filter,expand,jQuery.proxy(function(oData) {
+                DataManager.read(oModel,"/Batches",filter,urlParameter,jQuery.proxy(function(oData) {
                     if(oData.results.length >0){
                         $.when(this.loadCentralStoreDeferred).done($.proxy(function() {
                             for (var i = 0; i < oData.results.length; i++) {
@@ -155,6 +166,8 @@ sap.ui.define([
                                 var tempArr =[];
                                 data.forEach((v, i) => {
                                     var object = JSON.parse(JSON.stringify(v));  // this has to be done to remove the object reference in Arr.
+                                    delete object.Store;
+                                    delete object.Department;
                                     object.ID="";
                                     object.Store_StoreID=strStore;
                                     object.UpdatedBatch = false;
@@ -200,7 +213,12 @@ sap.ui.define([
 
                 var expand = "Store,Department";
 
-                DataManager.read(oModel,"/Batches",filter,expand,jQuery.proxy(function(oData) {
+                var urlParameter = {
+                    "$expand": expand,
+                    "$orderby":"BatchID"
+				};
+
+                DataManager.read(oModel,"/Batches",filter,urlParameter,jQuery.proxy(function(oData) {    
                     oLocalModel.setProperty("/BatchesCentralStore", oData.results);
                     this.getView().byId("tbCentralCharge").setVisible(true);
                     this.loadCentralStoreDeferred.resolve();
@@ -234,7 +252,8 @@ sap.ui.define([
                             text: "{LocalModel>BatchID}"
                         }),
                         new TimePicker({
-                            valueState: "{=${LocalModel>Active_Monday} === true?'Success':'None'}",
+                            id:"tpMon",
+                            valueState: "{=${LocalModel>Changed_Monday} === false?'Success':'Warning'}",
                             valueFormat:"HH:mm:ss",
                             displayFormat:"HH:mm:ss",
                             change:this.handleChange,
@@ -242,7 +261,8 @@ sap.ui.define([
                             value:"{path :'LocalModel>Time_Monday', type: 'sap.ui.model.odata.type.Time'}"   
                         }),
                         new TimePicker({
-                            valueState: "{=${LocalModel>Active_Tuesday} === true?'Success':'None'}",
+                            id:"tpTues",
+                            valueState: "{=${LocalModel>Changed_Tuesday} === false?'Success':'Warning'}",
                             valueFormat:"HH:mm:ss",
                             displayFormat:"HH:mm:ss",
                             change:this.handleChange,
@@ -250,7 +270,8 @@ sap.ui.define([
                             value:"{path :'LocalModel>Time_Tuesday', type: 'sap.ui.model.odata.type.Time'}"   
                         }),
                         new TimePicker({
-                            valueState: "{=${LocalModel>Active_Wednesday} === true?'Success':'None'}",
+                            id:"tpWed",
+                            valueState: "{=${LocalModel>Changed_Wednesday} === false?'Success':'Warning'}",
                             valueFormat:"HH:mm:ss",
                             displayFormat:"HH:mm:ss",
                             change:this.handleChange,
@@ -258,7 +279,8 @@ sap.ui.define([
                             value:"{path :'LocalModel>Time_Wednesday', type: 'sap.ui.model.odata.type.Time'}"   
                         }),
                         new TimePicker({
-                            valueState: "{=${LocalModel>Active_Thursday} === true?'Success':'None'}",
+                            id:"tpThurs",
+                            valueState: "{=${LocalModel>Changed_Thursday} === false?'Success':'Warning'}",
                             valueFormat:"HH:mm:ss",
                             displayFormat:"HH:mm:ss",
                             change:this.handleChange,
@@ -266,7 +288,8 @@ sap.ui.define([
                             value:"{path :'LocalModel>Time_Thursday', type: 'sap.ui.model.odata.type.Time'}"   
                         }),
                         new TimePicker({
-                            valueState: "{=${LocalModel>Active_Friday} === true?'Success':'None'}",
+                            id:"tpFri",
+                            valueState: "{=${LocalModel>Changed_Friday} === false?'Success':'Warning'}",
                             valueFormat:"HH:mm:ss",
                             displayFormat:"HH:mm:ss",
                             change:this.handleChange,
@@ -274,7 +297,8 @@ sap.ui.define([
                             value:"{path :'LocalModel>Time_Friday', type: 'sap.ui.model.odata.type.Time'}"   
                         }),
                         new TimePicker({
-                            valueState: "{=${LocalModel>Active_Saturday} === true?'Success':'None'}",
+                            id:"tpSat",
+                            valueState: "{=${LocalModel>Changed_Saturday} === false?'Success':'Warning'}",
                             valueFormat:"HH:mm:ss",
                             displayFormat:"HH:mm:ss",
                             change:this.handleChange,
@@ -282,7 +306,8 @@ sap.ui.define([
                             value:"{path :'LocalModel>Time_Saturday', type: 'sap.ui.model.odata.type.Time'}"   
                         }),
                         new TimePicker({
-                            valueState: "{=${LocalModel>Active_Sunday} === true?'Success':'None'}",
+                            id:"tpSun",
+                            valueState: "{=${LocalModel>Changed_Sunday} === false?'Success':'Warning'}",
                             valueFormat:"HH:mm:ss",
                             displayFormat:"HH:mm:ss",
                             change:this.handleChange,
@@ -296,6 +321,7 @@ sap.ui.define([
             rebindTable: function (oTemplate, sKeyboardMode) {
                 this.getView().byId("tbCharge").bindItems({
                     path: "LocalModel>/Batches",
+                    sorter: new sap.ui.model.Sorter("BatchID") ,
                     template: oTemplate,
                     templateShareable: true
                 }).setKeyboardMode(sKeyboardMode);
@@ -303,18 +329,13 @@ sap.ui.define([
 
             handleEdit: function (oEvent) {
                 this.aProductCollection = deepExtend([], this.getView().getModel("LocalModel").getProperty("/Batches"));
-                this.getView().byId("editButton").setVisible(false);
-                this.getView().byId("saveButton").setVisible(true);
-                this.getView().byId("cancelButton").setVisible(true);
-                this.getView().byId("linkAddCharge").setVisible(true);
+                this.changeButtonVisibility("Edit");
                 this.updateTableTitle();
                 this.rebindTable(this.oEditableTemplate, "Edit");
             },
 
             handleCancel: function () {
-                this.getView().byId("cancelButton").setVisible(false);
-                this.getView().byId("saveButton").setVisible(false);
-                this.getView().byId("editButton").setVisible(true);
+                this.changeButtonVisibility("Cancel");
                 this.getView().getModel("LocalModel").setProperty("/Batches", this.aProductCollection);
                 this.updateTableTitle();
                 this.rebindTable(this.oReadOnlyTemplate, "Navigation");
@@ -324,11 +345,29 @@ sap.ui.define([
                
                 var oLocalModel = this.getModel("LocalModel");
                 var i = oEvent.getSource();
-                var inpId = oEvent.getParameter("id");
+                var tpId = oEvent.getParameter("id");
                 var value = oEvent.getParameter("value");
 
                 var sPath = i.getParent().getBindingContext("LocalModel").sPath;
                 oLocalModel.setProperty(sPath + "/UpdatedBatch", true);
+
+                if(oEvent.getSource()._sOldInputValue !== value){
+                    if(tpId.includes("Mon")){
+                        oLocalModel.setProperty(sPath + "/Changed_Monday", true);
+                    }else if(tpId.includes("Tues")){
+                        oLocalModel.setProperty(sPath + "/Changed_Tuesday", true);
+                    }else if(tpId.includes("Wed")){
+                        oLocalModel.setProperty(sPath + "/Changed_Wednesday", true);
+                    }else if(tpId.includes("Thurs")){
+                        oLocalModel.setProperty(sPath + "/Changed_Thursday", true);
+                    }else if(tpId.includes("Fri")){
+                        oLocalModel.setProperty(sPath + "/Changed_Friday", true);
+                    }else if(tpId.includes("Sat")){
+                        oLocalModel.setProperty(sPath + "/Changed_Saturday", true);
+                    }else if(tpId.includes("Sunday")){
+                        oLocalModel.setProperty(sPath + "/Changed_Sunday", true);
+                    }
+                }
             },
 
             requestPayload:function(chargeData){
@@ -336,13 +375,13 @@ sap.ui.define([
                     "Store_StoreID": chargeData.Store_StoreID,
                     "Department_DepartmentID": chargeData.Department_DepartmentID,
                     "BatchID": chargeData.BatchID,
-                    "Active_Monday": chargeData.Active_Monday,
-                    "Active_Tuesday": chargeData.Active_Tuesday,
-                    "Active_Wednesday": chargeData.Active_Wednesday,
-                    "Active_Thursday": chargeData.Active_Thursday,
-                    "Active_Friday": chargeData.Active_Friday,
-                    "Active_Saturday": chargeData.Active_Saturday,
-                    "Active_Sunday": chargeData.Active_Sunday,
+                    "Changed_Monday": chargeData.Changed_Monday,
+                    "Changed_Tuesday": chargeData.Changed_Tuesday,
+                    "Changed_Wednesday": chargeData.Changed_Wednesday,
+                    "Changed_Thursday": chargeData.Changed_Thursday,
+                    "Changed_Friday": chargeData.Changed_Friday,
+                    "Changed_Saturday": chargeData.Changed_Saturday,
+                    "Changed_Sunday": chargeData.Changed_Sunday,
                     "Time_Monday": chargeData.Time_Monday,
                     "Time_Tuesday": chargeData.Time_Tuesday,
                     "Time_Wednesday": chargeData.Time_Wednesday,
@@ -377,6 +416,15 @@ sap.ui.define([
                     oView.byId("createChargeButton").setVisible(true);
                     oView.byId("cancelButton").setVisible(true);
                     this.rebindTable(this.oEditableTemplate, "Edit");   
+                }else if(mode === "Edit"){
+                    oView.byId("editButton").setVisible(false);
+                    oView.byId("saveButton").setVisible(true);
+                    oView.byId("cancelButton").setVisible(true);
+                    oView.byId("linkAddCharge").setVisible(true);
+                }else if(mode === "Cancel"){
+                    oView.byId("cancelButton").setVisible(false);
+                    oView.byId("saveButton").setVisible(false);
+                    oView.byId("editButton").setVisible(true);
                 }
             },
 
@@ -386,6 +434,7 @@ sap.ui.define([
 
                 var oModel = this.getOwnerComponent().getModel();//this.getView().getModel();
                 var oLocalModel = this.getView().getModel("LocalModel");
+                var i18nModel = this.getOwnerComponent().getModel("i18n");
 
                 var strStore = this.getView().byId("cbStore").getSelectedKey();
                 var valDept = this.getView().byId("cbDepartment").getValue();
@@ -407,7 +456,7 @@ sap.ui.define([
                 });
                 
                 /// segregate update and new creation
-                MessageBox.confirm("Do you want to Update Charge ?", {
+                MessageBox.confirm(i18nModel.getText("Message_Confirm_Update"), {
                     title: "Confirm",
                     onClose: $.proxy(function (oAction) {
                         if (oAction === MessageBox.Action.OK) {
@@ -417,18 +466,17 @@ sap.ui.define([
                                 if (chargeDataUpdated[i].ID !=="" && chargeDataUpdated[i].UpdatedBatch === true) {
                                     nRecords=nRecords+1;
                                     var payload = this.requestPayload(chargeDataUpdated[i]);
-                                    oModel.update("/Batches(guid'"+chargeDataUpdated[i].ID+"')", payload, {
-                                        success: $.proxy(function (oData) {
-                                            nRecUpdated=nRecUpdated+1;
-                                            if (nRecords === nRecUpdated) {
-                                                this.chargeUpdateDeferred.resolve();
-                                            }
-                                        }, this),
-                                        error: $.proxy(function (error) {
-                                            MessageToast.show(error); 
-                                            this.chargeUpdateDeferred.reject();   
-                                        }, this)
-                                    });
+                                    DataManager.update(oModel,"/Batches(guid'"+chargeDataUpdated[i].ID+"')",payload,
+                                    jQuery.proxy(function(oData){ 
+                                        nRecUpdated=nRecUpdated+1;
+                                        if (nRecords === nRecUpdated) {
+                                            this.chargeUpdateDeferred.resolve();
+                                        }
+                                    }, this),
+                                    jQuery.proxy(function(oError){
+                                        MessageToast.show(error); 
+                                        this.chargeUpdateDeferred.reject();   
+                                    }, this));
                                 }else{
                                     this.chargeUpdateDeferred.resolve();
                                 }
@@ -440,17 +488,16 @@ sap.ui.define([
                                     for (var i = 0; i < chargeDataCreated.length; i++) {
                                         nRecordsCreated=nRecordsCreated+1;
                                         var payload = this.requestPayload(chargeDataCreated[i]);
-                                        oModel.create("/Batches", payload, {
-                                            success: $.proxy(function (oData) {
-                                                nRecCreated=nRecCreated+1;
-                                                if (nRecordsCreated === nRecCreated) {
-                                                     this.changeButtonVisibility("Create");
-                                                }
-                                            }, this),
-                                            error: $.proxy(function () {
-                                                MessageToast.show(error); 
-                                            }, this)
-                                        });
+                                        DataManager.create("/Batches", payload, 
+                                        jQuery.proxy(function(oData){ 
+                                            nRecCreated=nRecCreated+1;
+                                            if (nRecordsCreated === nRecCreated) {
+                                                    this.changeButtonVisibility("Create");
+                                            }
+                                        }, this),
+                                        jQuery.proxy(function(oData){ 
+                                            MessageToast.show(error); 
+                                        }, this));
                                     } 
                                 }else{
                                     this.changeButtonVisibility("Create");
@@ -476,11 +523,11 @@ sap.ui.define([
 
                 MessageBox.confirm("Are you Sure you want to Delete the Batch ?", {
 				title: "Confirm",
-				onClose: $.proxy(function(oAction) {
+				    onClose: $.proxy(function(oAction) {
                         if (oAction === MessageBox.Action.OK) {
                             if(selectedBatch.ID !== ""){
-                                oModel.remove("/Batches(guid'"+selectedBatch.ID+"')", {
-                                    success: $.proxy(function() {
+                                DataManager.remove("/Batches(guid'"+selectedBatch.ID+"')", 
+                                    jQuery.proxy(function(oData){ 
                                         chargeData.splice(indexToDelete, 1);
                                         oLocalModel.setProperty("/Batches", chargeData);
                                         this.changeButtonVisibility("Delete");
@@ -488,10 +535,10 @@ sap.ui.define([
                                             this.getView().byId("copyCentralButton").setVisible(true);
                                         MessageToast.show("Charge "+selectedBatch.BatchID+" for Department "+ valDept + " is deleted.");
                                     }, this),
-                                    error: $.proxy(function(oError) {
+                                    jQuery.proxy(function(oData){ 
                                         MessageToast.show(oError);
                                     }, this)
-                                });
+                                );
                             }else{
                                 chargeData.splice(indexToDelete, 1);
                                 oLocalModel.setProperty("/Batches", chargeData);
@@ -526,17 +573,17 @@ sap.ui.define([
                             for (var i = 0; i < chargeData.length; i++) {
                                 nRecords++;
                                 var payload = this.requestPayload(chargeData[i]);
-                                oModel.create("/Batches", payload, {
-                                    success: $.proxy(function (oData) {
+                                 DataManager.create("/Batches", payload, 
+                                    jQuery.proxy(function(oData){ 
                                         nRecCreated++;
                                         if (nRecords === nRecCreated) {
                                             this.changeButtonVisibility("Create");
                                         }
                                     }, this),
-                                    error: $.proxy(function () {
-
+                                    jQuery.proxy(function(oError){ 
+                                            MessageToast.show(oError);
                                     }, this)
-                                });
+                                );
                             }
                         }
                     },this)   
@@ -560,19 +607,19 @@ sap.ui.define([
                 var newEntry =  {
                     "ID": "",
 					"BatchID": nRecords,
-					"Active_Monday": true,
+					"Changed_Monday": false,
                     "Time_Monday": null,
-                    "Active_Tuesday": true,
+                    "Changed_Tuesday": false,
                     "Time_Tuesday": null,
-                    "Active_Wednesday": true,
+                    "Changed_Wednesday": false,
                     "Time_Wednesday": null,
-                    "Active_Thursday": true,
+                    "Changed_Thursday": false,
                     "Time_Thursday": null,
-                    "Active_Friday": true,
+                    "Changed_Friday": false,
                     "Time_Friday": null,
-                    "Active_Saturday": true,
+                    "Changed_Saturday": false,
                     "Time_Saturday": null,
-                    "Active_Sunday": true,
+                    "Changed_Sunday": false,
                     "Time_Sunday": null,
                     "Store_StoreID":strStore,
                     "Department_DepartmentID":strDept
@@ -586,7 +633,6 @@ sap.ui.define([
                     this.byId("createChargeButton").setVisible(true);
                     if(aCollection.length === 0)
                         this.rebindTable(this.oEditableTemplate, "Edit");
-                    
                 }
                 
                 this.byId("cancelButton").setVisible(true);
@@ -596,29 +642,31 @@ sap.ui.define([
             },
 
             handleCopyFromCentral:function(){
-                var oLocalModel = this.getView().getModel("LocalModel");
-                var oModel = this.getOwnerComponent().getModel();//this.getView().getModel();
 
-                var strStore = this.getView().byId("cbStore").getSelectedKey();    
-                var strBaf = this.getView().byId("cbDepartment").getSelectedKey();
-                
-                var storeFilter = new Filter("Store_StoreID", FilterOperator.EQ, '9999');
-                var depFilter = new Filter("Department_DepartmentID", FilterOperator.EQ, strBaf);
+                var oView = this.getView();
+                var oLocalModel = oView.getModel("LocalModel");
+                var strStore = oView.byId("cbStore").getSelectedKey();
 
-                var tempFilter = []
-                tempFilter.push(storeFilter);
-                tempFilter.push(depFilter);
+                this.loadCentralStoreCharge();
 
-                DataManager.read(oModel,"/Batches",tempFilter,"",jQuery.proxy(function(oData) {
-                    for (var i = 0; i < oData.results.length; i++) {
-                            oData.results[i].StoreID=strStore;
-                            oData.results[i].UpdatedBatch = false;
-                        }
-                        oLocalModel.setProperty("/Batches", oData.results);
+                $.when(this.loadCentralStoreDeferred).done($.proxy(function() {
+                    var data =oLocalModel.getProperty("/BatchesCentralStore");
+                    if(data.length >0){
+                        var tempArr =[];
+                        data.forEach((v, i) => {
+                            var object = JSON.parse(JSON.stringify(v));  // this has to be done to remove the object reference in Arr.
+                            delete object.Store;
+                            delete object.Department;
+                            object.ID="";
+                            object.Store_StoreID=strStore;
+                            object.UpdatedBatch = false;
+                            tempArr.push(object);
+                        },this);
+                    
+                        oLocalModel.setProperty("/Batches", tempArr);
                         this.changeButtonVisibility("Copy");
-                },this), jQuery.proxy(function(oError){
-                    MessageToast.show(oError);   
-                },this));
+                    }    
+                }, this));     
             },
 
             

@@ -2,15 +2,8 @@ sap.ui.define([], function() {
 	"use strict";
 	return {
 
-        read : function(oModel, sPath, filter, expand, fnSuccess, fnFail){
+        read : function(oModel, sPath, filter, urlParameter, fnSuccess, fnFail){
 
-            var urlParameter = {};
-            if (expand !== "" ) {
-				urlParameter = {
-					"$expand": expand,
-				};
-            }
-            
             oModel.read(sPath, {
                 filters:filter,
 				urlParameters: urlParameter,
@@ -22,6 +15,14 @@ sap.ui.define([], function() {
 
         update : function(oModel, sPath, payload,fnSuccess, fnFail){
               oModel.update(sPath, payload , fnSucces, fnFail);
-        }
+        },
+
+        create:function(oModel,sPath, payload,fnSuccess, fnFail){
+            oModel.create(sPath, payload , fnSucces, fnFail);
+        },
+
+        delete: function(oModel, sPath,fnSuccess, fnFail){
+              oModel.remove(sPath, fnSucces, fnFail);
+        },
     };
 });
