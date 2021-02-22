@@ -344,30 +344,38 @@ sap.ui.define([
             handleChange: function (oEvent) {
                
                 var oLocalModel = this.getModel("LocalModel");
-                var i = oEvent.getSource();
+                var centralBatch = oLocalModel.getProperty("/BatchesCentralStore");
+
+                var inpSource = oEvent.getSource();
                 var tpId = oEvent.getParameter("id");
                 var value = oEvent.getParameter("value");
 
-                var sPath = i.getParent().getBindingContext("LocalModel").sPath;
+                var sPath = inpSource.getParent().getBindingContext("LocalModel").sPath;
+                var oContext = inpSource.getBindingContext("LocalModel");
+                var strBatchID = oContext.getProperty("BatchID");
+
+                
                 oLocalModel.setProperty(sPath + "/UpdatedBatch", true);
 
-                if(oEvent.getSource()._sOldInputValue !== value){
-                    if(tpId.includes("Mon")){
-                        oLocalModel.setProperty(sPath + "/Changed_Monday", true);
-                    }else if(tpId.includes("Tues")){
-                        oLocalModel.setProperty(sPath + "/Changed_Tuesday", true);
-                    }else if(tpId.includes("Wed")){
-                        oLocalModel.setProperty(sPath + "/Changed_Wednesday", true);
-                    }else if(tpId.includes("Thurs")){
-                        oLocalModel.setProperty(sPath + "/Changed_Thursday", true);
-                    }else if(tpId.includes("Fri")){
-                        oLocalModel.setProperty(sPath + "/Changed_Friday", true);
-                    }else if(tpId.includes("Sat")){
-                        oLocalModel.setProperty(sPath + "/Changed_Saturday", true);
-                    }else if(tpId.includes("Sunday")){
-                        oLocalModel.setProperty(sPath + "/Changed_Sunday", true);
-                    }
-                }
+                var filCentralBatch = centralBatch.filter(function(object, i) {
+                    return object.BatchID === strBatchID;
+                });
+
+                if(tpId.includes("Mon")){
+                    oLocalModel.setProperty(sPath + "/Changed_Monday", filCentralBatch[0].Time_Monday.ms !== oContext.getProperty("Time_Monday").ms?true:false);
+                }else if(tpId.includes("Tues")){
+                    oLocalModel.setProperty(sPath + "/Changed_Tuesday", filCentralBatch[0].Time_Tuesday.ms !== oContext.getProperty("Time_Tuesday").ms?true:false);
+                }else if(tpId.includes("Wed")){
+                    oLocalModel.setProperty(sPath + "/Changed_Wednesday", filCentralBatch[0].Time_Wednesday.ms!== oContext.getProperty("Time_Wednesday").ms?true:false);
+                } else if(tpId.includes("Thurs")){
+                    oLocalModel.setProperty(sPath + "/Changed_Thursday", filCentralBatch[0].Time_Thursday.ms !== oContext.getProperty("Time_Thursday").ms?true:false);
+                } else if(tpId.includes("Fri")){
+                    oLocalModel.setProperty(sPath + "/Changed_Friday", filCentralBatch[0].Time_Friday.ms !== oContext.getProperty("Time_Friday").ms?true:false);
+                } else if(tpId.includes("Sat")){
+                    oLocalModel.setProperty(sPath + "/Changed_Friday", filCentralBatch[0].Time_Saturday.ms !== oContext.getProperty("Time_Saturday").ms?true:false);
+                } else if(tpId.includes("Sun")){
+                    oLocalModel.setProperty(sPath + "/Changed_Sunday", filCentralBatch[0].Time_Sunday.ms !== oContext.getProperty("Time_Sunday").ms?true:false);
+                }    
             },
 
             requestPayload:function(chargeData){
@@ -456,7 +464,7 @@ sap.ui.define([
                 });
                 
                 /// segregate update and new creation
-                MessageBox.confirm(i18nModel.getText("Message_Confirm_Update"), {
+                MessageBox.confirm("Do you want to Update Charge ?", {
                     title: "Confirm",
                     onClose: $.proxy(function (oAction) {
                         if (oAction === MessageBox.Action.OK) {

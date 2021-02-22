@@ -14,15 +14,15 @@ sap.ui.define([], function() {
 
 
         update : function(oModel, sPath, payload,fnSuccess, fnFail){
-              oModel.update(sPath, payload , fnSucces, fnFail);
+              oModel.update(sPath, payload , fnSuccess, fnFail);
         },
 
         create:function(oModel,sPath, payload,fnSuccess, fnFail){
-            oModel.create(sPath, payload , fnSucces, fnFail);
+            oModel.create(sPath, payload , fnSuccess, fnFail);
         },
 
         delete: function(oModel, sPath,fnSuccess, fnFail){
-              oModel.remove(sPath, fnSucces, fnFail);
+              oModel.remove(sPath, fnSuccess, fnFail);
         },
     };
 });
