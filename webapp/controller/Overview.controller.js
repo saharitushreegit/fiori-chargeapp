@@ -499,17 +499,17 @@ sap.ui.define([
                                 if (chargeDataUpdated[i].ID !=="" && chargeDataUpdated[i].UpdatedBatch === true) {
                                     nRecords=nRecords+1;
                                     var payload = this.requestPayload(chargeDataUpdated[i]);
-                                    DataManager.update(oModel,"/Batches(guid'"+chargeDataUpdated[i].ID+"')",payload,
-                                    jQuery.proxy(function(oData){ 
+                                    oModel.update("/Batches(guid'"+chargeDataUpdated[i].ID+"')",payload,{
+                                    success: $.proxy(function(oData) { 
                                         nRecUpdated=nRecUpdated+1;
                                         if (nRecords === nRecUpdated) {
                                             this.chargeUpdateDeferred.resolve();
                                         }
                                     }, this),
-                                    jQuery.proxy(function(oError){
+                                    error: $.proxy(function(error) {
                                         MessageToast.show(error); 
                                         this.chargeUpdateDeferred.reject();   
-                                    }, this));
+                                    }, this)});
                                 }else{
                                     this.chargeUpdateDeferred.resolve();
                                 }
@@ -528,7 +528,7 @@ sap.ui.define([
                                                     this.changeButtonVisibility("Create");
                                             }
                                         }, this),
-                                        error: $.proxy(function() {
+                                        error: $.proxy(function(error) {
                                             MessageToast.show(error); 
                                         }, this)});
                                     } 
