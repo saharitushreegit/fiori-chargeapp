@@ -100,6 +100,9 @@ sap.ui.define([
                 var filter = [];
                 var selectedStore = oEvent.oSource.getSelectedKey();
                 var cbDepartment =this.getView().byId("cbDepartment");
+
+                oLocalModel.setProperty("/Batches",[]);
+                oLocalModel.setProperty("/BatchesCentralStore",[])
                
                 if (selectedStore.length > 0) {
                     filter = [new sap.ui.model.Filter("StoreID", sap.ui.model.FilterOperator.EQ, selectedStore)];
@@ -133,6 +136,7 @@ sap.ui.define([
                 var valDepartDesc = cbDepartment.getValue();
 
                 oLocalModel.setProperty("/Batches",[]);
+                oLocalModel.setProperty("/BatchesCentralStore",[])
 
                 var storeFilter = new Filter("Store_StoreID", FilterOperator.EQ, strStore);
                 var depFilter = new Filter("Department_DepartmentID", FilterOperator.EQ, strDepartmentID);
@@ -362,19 +366,40 @@ sap.ui.define([
                 });
 
                 if(tpId.includes("Mon")){
-                    oLocalModel.setProperty(sPath + "/Changed_Monday", filCentralBatch[0].Time_Monday.ms !== oContext.getProperty("Time_Monday").ms?true:false);
+                    if(filCentralBatch.length >0)
+                        oLocalModel.setProperty(sPath + "/Changed_Monday", filCentralBatch[0].Time_Monday.ms !== oContext.getProperty("Time_Monday").ms?true:false);
+                    else
+                        oLocalModel.setProperty(sPath + "/Changed_Monday",false);    
                 }else if(tpId.includes("Tues")){
-                    oLocalModel.setProperty(sPath + "/Changed_Tuesday", filCentralBatch[0].Time_Tuesday.ms !== oContext.getProperty("Time_Tuesday").ms?true:false);
+                    if(filCentralBatch.length >0)
+                        oLocalModel.setProperty(sPath + "/Changed_Tuesday", filCentralBatch[0].Time_Tuesday.ms !== oContext.getProperty("Time_Tuesday").ms?true:false);
+                    else
+                        oLocalModel.setProperty(sPath + "/Changed_Tuesday",false);        
                 }else if(tpId.includes("Wed")){
-                    oLocalModel.setProperty(sPath + "/Changed_Wednesday", filCentralBatch[0].Time_Wednesday.ms!== oContext.getProperty("Time_Wednesday").ms?true:false);
+                    if(filCentralBatch.length >0)
+                        oLocalModel.setProperty(sPath + "/Changed_Wednesday", filCentralBatch[0].Time_Wednesday.ms!== oContext.getProperty("Time_Wednesday").ms?true:false);
+                    else
+                        oLocalModel.setProperty(sPath + "/Changed_Wednesday",false);       
                 } else if(tpId.includes("Thurs")){
-                    oLocalModel.setProperty(sPath + "/Changed_Thursday", filCentralBatch[0].Time_Thursday.ms !== oContext.getProperty("Time_Thursday").ms?true:false);
+                    if(filCentralBatch.length >0)
+                        oLocalModel.setProperty(sPath + "/Changed_Thursday", filCentralBatch[0].Time_Thursday.ms !== oContext.getProperty("Time_Thursday").ms?true:false);
+                    else
+                        oLocalModel.setProperty(sPath + "/Changed_Thursday",false);      
                 } else if(tpId.includes("Fri")){
-                    oLocalModel.setProperty(sPath + "/Changed_Friday", filCentralBatch[0].Time_Friday.ms !== oContext.getProperty("Time_Friday").ms?true:false);
+                    if(filCentralBatch.length >0)
+                        oLocalModel.setProperty(sPath + "/Changed_Friday", filCentralBatch[0].Time_Friday.ms !== oContext.getProperty("Time_Friday").ms?true:false);
+                    else
+                        oLocalModel.setProperty(sPath + "/Changed_Friday",false);    
                 } else if(tpId.includes("Sat")){
-                    oLocalModel.setProperty(sPath + "/Changed_Friday", filCentralBatch[0].Time_Saturday.ms !== oContext.getProperty("Time_Saturday").ms?true:false);
+                    if(filCentralBatch.length >0)
+                        oLocalModel.setProperty(sPath + "/Changed_Saturday", filCentralBatch[0].Time_Saturday.ms !== oContext.getProperty("Time_Saturday").ms?true:false);
+                    else
+                        oLocalModel.setProperty(sPath + "/Changed_Saturday", false);   
                 } else if(tpId.includes("Sun")){
-                    oLocalModel.setProperty(sPath + "/Changed_Sunday", filCentralBatch[0].Time_Sunday.ms !== oContext.getProperty("Time_Sunday").ms?true:false);
+                    if(filCentralBatch.length >0)
+                        oLocalModel.setProperty(sPath + "/Changed_Sunday", filCentralBatch[0].Time_Sunday.ms !== oContext.getProperty("Time_Sunday").ms?true:false);
+                    else
+                        oLocalModel.setProperty(sPath + "/Changed_Sunday", false);       
                 }    
             },
 
@@ -496,16 +521,16 @@ sap.ui.define([
                                     for (var i = 0; i < chargeDataCreated.length; i++) {
                                         nRecordsCreated=nRecordsCreated+1;
                                         var payload = this.requestPayload(chargeDataCreated[i]);
-                                        DataManager.create("/Batches", payload, 
-                                        jQuery.proxy(function(oData){ 
+                                        oModel.create("/Batches", payload, {
+                                        success: $.proxy(function(oData) { 
                                             nRecCreated=nRecCreated+1;
                                             if (nRecordsCreated === nRecCreated) {
                                                     this.changeButtonVisibility("Create");
                                             }
                                         }, this),
-                                        jQuery.proxy(function(oData){ 
+                                        error: $.proxy(function() {
                                             MessageToast.show(error); 
-                                        }, this));
+                                        }, this)});
                                     } 
                                 }else{
                                     this.changeButtonVisibility("Create");
@@ -534,8 +559,8 @@ sap.ui.define([
 				    onClose: $.proxy(function(oAction) {
                         if (oAction === MessageBox.Action.OK) {
                             if(selectedBatch.ID !== ""){
-                                DataManager.remove("/Batches(guid'"+selectedBatch.ID+"')", 
-                                    jQuery.proxy(function(oData){ 
+                                oModel.remove("/Batches(guid'"+selectedBatch.ID+"')", {
+                                    success: $.proxy(function(oData) { 
                                         chargeData.splice(indexToDelete, 1);
                                         oLocalModel.setProperty("/Batches", chargeData);
                                         this.changeButtonVisibility("Delete");
@@ -543,10 +568,10 @@ sap.ui.define([
                                             this.getView().byId("copyCentralButton").setVisible(true);
                                         MessageToast.show("Charge "+selectedBatch.BatchID+" for Department "+ valDept + " is deleted.");
                                     }, this),
-                                    jQuery.proxy(function(oData){ 
+                                    error: $.proxy(function(oError) {
                                         MessageToast.show(oError);
                                     }, this)
-                                );
+                                });
                             }else{
                                 chargeData.splice(indexToDelete, 1);
                                 oLocalModel.setProperty("/Batches", chargeData);
@@ -581,17 +606,17 @@ sap.ui.define([
                             for (var i = 0; i < chargeData.length; i++) {
                                 nRecords++;
                                 var payload = this.requestPayload(chargeData[i]);
-                                 DataManager.create("/Batches", payload, 
-                                    jQuery.proxy(function(oData){ 
+                                 oModel.create("/Batches", payload, {
+                                     success: $.proxy(function(oData) {
                                         nRecCreated++;
                                         if (nRecords === nRecCreated) {
                                             this.changeButtonVisibility("Create");
                                         }
                                     }, this),
-                                    jQuery.proxy(function(oError){ 
+                                    error: $.proxy(function(oError) {
                                             MessageToast.show(oError);
                                     }, this)
-                                );
+                                 });
                             }
                         }
                     },this)   
