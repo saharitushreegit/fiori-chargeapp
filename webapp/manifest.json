@@ -37,6 +37,9 @@
             }
         }
     },
+    "sap.cloud":{
+        "service":"chargeapp.service"
+    },
     "sap.ui": {
         "technology": "UI5",
         "icons": {
@@ -121,7 +124,7 @@
                     "name": "Admin",
                     "pattern": "Admin",
                     "target": [
-                        "Overview"
+                        "ManageCentralStore"
                     ]
                 }
 

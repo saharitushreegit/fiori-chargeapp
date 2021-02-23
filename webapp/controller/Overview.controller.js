@@ -50,7 +50,7 @@ sap.ui.define([
                 }else{
                     this.clearValues();
                     this.loadStores();
-                    this.loadDepartment();
+                    //this.loadDepartment();
                 }
             },
 
@@ -82,24 +82,27 @@ sap.ui.define([
                 },this));
              },
 
-            loadDepartment: function () {
+            loadDepartment: function (filterDep) {
                 var oLocalModel = this.getView().getModel("LocalModel");
                 var oModel = this.getOwnerComponent().getModel();//this.getView().getModel();
 
                 var urlParameter = {};
-                DataManager.read(oModel,"/Departments","",urlParameter,jQuery.proxy(function(oData) {
+                var filter = filterDep;
+
+                DataManager.read(oModel,"/Departments",filter,urlParameter,jQuery.proxy(function(oData) {
                     oLocalModel.setProperty("/Departments", oData.results);
                 },this), jQuery.proxy(function(oError){
-
+                    this.loadDepartmentDeferred.reject();
                 },this));
             },
 
             handleStoreChange: function (oEvent) {
-                var oLocalModel = this.getView().getModel("LocalModel");
-                var oModel = this.getOwnerComponent().getModel();
+                var that = this;
+                var oLocalModel = that.getView().getModel("LocalModel");
+                var oModel = that.getOwnerComponent().getModel();
                 var filter = [];
                 var selectedStore = oEvent.oSource.getSelectedKey();
-                var cbDepartment =this.getView().byId("cbDepartment");
+                var cbDepartment =that.getView().byId("cbDepartment");
 
                 oLocalModel.setProperty("/Batches",[]);
                 oLocalModel.setProperty("/BatchesCentralStore",[])
@@ -109,17 +112,24 @@ sap.ui.define([
                 }
 
                 var urlParameter = {};
+                //when data model for StoresToDepartments will be changed to association to Store and drpartment,
+                //expand will be used to read the department details
+                var fnSuccess = function(oData){
+                    if(oData.results.length>0){
+                        var filterDep=[];
+                        for (var i = 0; i < oData.results.length; i++) {
+                            filterDep.push(new Filter("DepartmentID" , FilterOperator.EQ, oData.results[i].DepartmentID));
+                        }
+                        that.loadDepartment(filterDep);
+                    }else{
+                        oLocalModel.setProperty("/Departments",[]);/// will be implemented in diffrent way in actualu project
+                    }    
+                };
 
-                DataManager.read(oModel,"/StoresToDepartments",filter,urlParameter,jQuery.proxy(function(oData) {
-                    var filterDep=[];
-                    for (var i = 0; i < oData.results.length; i++) {
-                        filterDep.push(new Filter("DepartmentID" , FilterOperator.EQ, oData.results[i].DepartmentID));
-                    }
-                    cbDepartment.getBinding("items").filter(filterDep);
-                    cbDepartment.setSelectedItemId("");
-                },this), jQuery.proxy(function(oError){
-
-                },this));
+                var fnError= function(oError){
+                    MessageToast.show(oError);
+                };    
+                DataManager.read(oModel,"/StoresToDepartments",filter,urlParameter,fnSuccess, fnError);
             },
 
             handleOnSearch: function (oEvent) {
