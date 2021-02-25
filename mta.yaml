@@ -45,7 +45,7 @@ modules:
     build-result: resources
     requires:
     - artifacts:
-      - fiorichargeapp-content.zip
+      - fiorichargeapp.zip
       name: fiorichargeapp
       target-path: resources/
 
@@ -53,10 +53,12 @@ modules:
   type: html5
   path: .
   build-parameters:
+    build-result: dist
     builder: custom
     commands:
-    - npm run build
-    supported-platforms: []      
+    - npm install
+    - npm run build:cf
+    supported-platforms: []     
 
 
 resources:
@@ -83,6 +85,7 @@ resources:
     service-name: fiorichargeapp-xsuaa-service
     service-plan: application
 parameters:
+  deploy_mode: html5-repo
   enable-parallel-deployments: true
 build-parameters:
   before-all:

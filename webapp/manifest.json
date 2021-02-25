@@ -13,7 +13,7 @@
         "ach": "ach",
         "dataSources": {
             "mainService": {
-                "uri": "v2/pal2/",
+                "uri": "/v2/pal2/",
                 "type": "OData",
                 "settings": {
                     "odataVersion": "2.0",
@@ -39,7 +39,7 @@
     },
     "sap.cloud":{
         "public" : true,
-        "service":"chargeapp.service"
+        "service":"chargeapp_service"
     },
     "sap.ui": {
         "technology": "UI5",
