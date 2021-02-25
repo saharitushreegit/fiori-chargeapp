@@ -3,7 +3,7 @@
   "authenticationMethod": "route",
   "routes": [
     {
-      "source": "^/v2/pal/",
+      "source": "^/v2/pal2/",
       "destination": "pal2-service",
       "authenticationType": "none",
       "csrfProtection": false
