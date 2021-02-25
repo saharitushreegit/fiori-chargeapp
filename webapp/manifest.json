@@ -1,7 +1,7 @@
 {
     "_version": "",
     "sap.app": {
-        "id": "fiorichargeapp",
+        "id": "com.sap.fiorichargeapp",
         "type": "application",
         "i18n": "i18n/i18n.properties",
         "applicationVersion": {
@@ -13,7 +13,7 @@
         "ach": "ach",
         "dataSources": {
             "mainService": {
-                "uri": "/v2/pal2/",
+                "uri": "v2/pal2/",
                 "type": "OData",
                 "settings": {
                     "odataVersion": "2.0",
