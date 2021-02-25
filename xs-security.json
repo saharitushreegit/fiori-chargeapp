@@ -1,5 +1,5 @@
 {
-  "xsappname": "com-sap-fiorichargeapp",
+  "xsappname": "fiorichargeapp",
   "tenant-mode": "dedicated",
   "description": "Security profile of called application",
   "scopes": [

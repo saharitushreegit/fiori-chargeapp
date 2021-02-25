@@ -1,19 +1,19 @@
 {
     "_version": "",
     "sap.app": {
-        "id": "com.sap.fiorichargeapp",
+        "id": "fiorichargeapp",
         "type": "application",
         "i18n": "i18n/i18n.properties",
         "applicationVersion": {
             "version": "1.0.0"
         },
-        "title": "",
+        "title": "Maintain Charge",
         "description": "",
         "resources": "resources.json",
         "ach": "ach",
         "dataSources": {
             "mainService": {
-                "uri": "/v2/pal2/",
+                "uri": "v2/pal2/",
                 "type": "OData",
                 "settings": {
                     "odataVersion": "2.0",
@@ -38,6 +38,7 @@
         }
     },
     "sap.cloud":{
+        "public" : true,
         "service":"chargeapp.service"
     },
     "sap.ui": {
