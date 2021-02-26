@@ -60,7 +60,6 @@ modules:
     - npm run build:cf
     supported-platforms: []     
 
-
 resources:
 - name: fiorichargeapp-destination-service
   type: org.cloudfoundry.managed-service
