@@ -24,7 +24,7 @@ sap.ui.define([
         deepExtend, ValueState, MessageBox,Fragment,Device,TimePicker,MessageToast) {
         "use strict";
 
-        return BaseController.extend("com.sap.fiorichargeapp.controller.Overview", {
+        return BaseController.extend("com.sap.fiorichargeapp.controller.MaintainCharge", {
             onInit: function () {
                 this.oRouter = new sap.ui.core.UIComponent.getRouterFor(this);
                  var oFilterModel = new JSONModel({

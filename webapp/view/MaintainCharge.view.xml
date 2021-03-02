@@ -1,5 +1,5 @@
 <mvc:View
-    controllerName="com.sap.fiorichargeapp.controller.Overview"
+    controllerName="com.sap.fiorichargeapp.controller.MaintainCharge"
     xmlns:mvc="sap.ui.core.mvc"
     displayBlock="true"
     xmlns="sap.m"

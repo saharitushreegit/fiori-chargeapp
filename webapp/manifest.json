@@ -108,42 +108,20 @@
             },
             "routes": [
                 {
-                    "name": "Launchpad",
+                    "name": "MaintainCharge",
                     "pattern": "",
                     "target": [
-                        "Launchpad"
-                    ]
-                },
-                {
-                    "name": "Overview",
-                    "pattern": "MaintainCharge",
-                    "target": [
-                        "Overview"
-                    ]
-                },
-                {
-                    "name": "Admin",
-                    "pattern": "Admin",
-                    "target": [
-                        "ManageCentralStore"
+                        "MaintainCharge"
                     ]
                 }
-
             ],
             "targets": {
-                "Launchpad":{
+                "MaintainCharge": {
                     "viewType": "XML",
                     "transition": "slide",
                     "clearControlAggregation": false,
-                    "viewId": "Launchpad",
-                    "viewName": "Launchpad"
-                },   
-                "Overview": {
-                    "viewType": "XML",
-                    "transition": "slide",
-                    "clearControlAggregation": false,
-                    "viewId": "Overview",
-                    "viewName": "Overview"
+                    "viewId": "MaintainCharge",
+                    "viewName": "MaintainCharge"
                 }
             }
         }
