@@ -1,7 +1,7 @@
 sap.ui.define([
 	"sap/ui/core/UIComponent",
 	"sap/ui/Device",
-	//"com/sap/fiorichargeapp/model/models"
+	"com/sap/fiorichargeapp/model/models"
 ], function (UIComponent, Device, models) {
 	"use strict";
 
@@ -19,12 +19,10 @@ sap.ui.define([
 		init: function () {
 			// call the base component's init function
 			UIComponent.prototype.init.apply(this, arguments);
-            console.log("conponent");
-			// enable routing
-			
-
+            console.log("component");
+        
 			// set the device model
-            //this.setModel(models.createDeviceModel(), "device");
+            this.setModel(models.createDeviceModel(), "device");
             this.getRouter().initialize();
         },
 

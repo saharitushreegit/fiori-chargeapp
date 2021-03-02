@@ -34,7 +34,7 @@ sap.ui.define([
                     BatchesCentralStore:[]
                 });
                 this.getView().setModel(oFilterModel, "LocalModel");
-               
+                
                 this.oReadOnlyTemplate = this.byId("tbCharge").getBindingInfo("items").template;//this.byId("tbCharge").removeItem(0);
                 this.initializeEditableTemplate();
                 this.oRouter.attachRouteMatched(this.onRouteMatched, this);
@@ -234,7 +234,7 @@ sap.ui.define([
 
                 DataManager.read(oModel,"/Batches",filter,urlParameter,jQuery.proxy(function(oData) {    
                     oLocalModel.setProperty("/BatchesCentralStore", oData.results);
-                    this.getView().byId("tbCentralCharge").setVisible(true);
+                    //this.getView().byId("tbCentralCharge").setVisible(true);
                     this.loadCentralStoreDeferred.resolve();
                 },this), jQuery.proxy(function(oError){
                    this.loadCentralStoreDeferred.reject();     
@@ -249,14 +249,14 @@ sap.ui.define([
                 var strDepartmentDesc = oView.byId("cbDepartment").getValue();
                 oView.byId("tbHeaderTitle").setText("Store : " + strStore + " - " + strDepartmentDesc);
 
-                var centralStore =oLocalModel.getProperty("/BatchesCentralStore")
+                /*var centralStore =oLocalModel.getProperty("/BatchesCentralStore")
                 if(centralStore.length>0){
                     var objCentralStore =oLocalModel.getProperty("/BatchesCentralStore")[0];
                     var strCentralStore= objCentralStore.Store.StoreName;
                     oView.byId("tbHeaderTitleCentral").setText("Store : " + strCentralStore + " - " + strDepartmentDesc+"("+centralStore.length+")");
                 }else{
                     oView.byId("tbHeaderTitleCentral").setText("Store : Central Store - " + strDepartmentDesc+"(0)");
-                }
+                }*/
             },
 
             initializeEditableTemplate: function () {
@@ -477,7 +477,7 @@ sap.ui.define([
 
                 var oModel = this.getOwnerComponent().getModel();//this.getView().getModel();
                 var oLocalModel = this.getView().getModel("LocalModel");
-                var i18nModel = this.getOwnerComponent().getModel("i18n");
+                var i18nModel = this.getOwnerComponent().getModel("i18n").getResourceBundle();
 
                 var strStore = this.getView().byId("cbStore").getSelectedKey();
                 var valDept = this.getView().byId("cbDepartment").getValue();
@@ -499,8 +499,8 @@ sap.ui.define([
                 });
                 
                 /// segregate update and new creation
-                MessageBox.confirm("Do you want to Update Charge ?", {
-                    title: "Confirm",
+                MessageBox.confirm(i18nModel.getText("Message_Confirm_Update"), {
+                    title: i18nModel.getText("Confirm"),
                     onClose: $.proxy(function (oAction) {
                         if (oAction === MessageBox.Action.OK) {
 
@@ -555,6 +555,7 @@ sap.ui.define([
             handleChargeDelete:function(oEvent){
 
                 var oModel = this.getOwnerComponent().getModel(); //this.getView().getModel();
+                var i18nModel = this.getOwnerComponent().getModel("i18n").getResourceBundle();
                 var oLocalModel = this.getView().getModel("LocalModel");    
                 var oParameter = oEvent.getParameter("listItem");
                 var selectedBatch = oParameter.getBindingContext("LocalModel").getObject();
@@ -564,8 +565,8 @@ sap.ui.define([
 
                 var valDept = this.getView().byId("cbDepartment").getValue();
 
-                MessageBox.confirm("Are you Sure you want to Delete the Batch ?", {
-				title: "Confirm",
+                MessageBox.confirm(i18nModel.getText("Message_Confirm_Delete"), {
+				title: i18nModel.getText("Confirm"),
 				    onClose: $.proxy(function(oAction) {
                         if (oAction === MessageBox.Action.OK) {
                             if(selectedBatch.ID !== ""){
@@ -597,18 +598,20 @@ sap.ui.define([
             },
 
             handleChargeCreate:function(oEvent){
-
-                var strStore = this.getView().byId("cbStore").getSelectedKey();
-                var strBaf = this.getView().byId("cbDepartment").getSelectedKey();
                 var oModel = this.getOwnerComponent().getModel(); //this.getView().getModel();
                 var oLocalModel = this.getView().getModel("LocalModel");
+                var i18nModel = this.getOwnerComponent().getModel("i18n").getResourceBundle();
+                var strStore = this.getView().byId("cbStore").getSelectedKey();
+                var strBaf = this.getView().byId("cbDepartment").getSelectedKey();
 
                 var chargeData = oLocalModel.getProperty("/Batches");
                 var nRecords=0;
                 var nRecCreated=0;
                 this.updateTableTitle();
-                MessageBox.confirm("Do you want to Create a Charge for Store "+strStore+" and Department "+strBaf+"?", {
-                    title: "Confirm",
+
+                //Do you want to Create a Charge for Store "+strStore+" and Department "+strBaf+"?",
+                MessageBox.confirm(i18nModel.getText("Message_Confirm_Delete"),{
+                    title: i18nModel.getText("Confirm"),
                     onClose: $.proxy(function (oAction) {
                         if (oAction === MessageBox.Action.OK) {
 
