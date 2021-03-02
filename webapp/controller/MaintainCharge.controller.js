@@ -14,14 +14,15 @@ sap.ui.define([
     'sap/ui/core/Fragment',
     'sap/ui/Device',
     'sap/m/TimePicker',
-    'sap/m/MessageToast'
+    'sap/m/MessageToast',
+    'sap/m/BusyIndicator'
     
 ],
 	/**
 	 * @param {typeof sap.ui.core.mvc.Controller} Controller
 	 */
     function (BaseController,DataManager, JSONModel, Filter, FilterOperator, ColumnListItem, Input, ObjectStatus, 
-        deepExtend, ValueState, MessageBox,Fragment,Device,TimePicker,MessageToast) {
+        deepExtend, ValueState, MessageBox,Fragment,Device,TimePicker,MessageToast,BusyIndicator) {
         "use strict";
 
         return BaseController.extend("com.sap.fiorichargeapp.controller.MaintainCharge", {
@@ -248,15 +249,6 @@ sap.ui.define([
                 var strStore = oView.byId("cbStore").getSelectedKey();
                 var strDepartmentDesc = oView.byId("cbDepartment").getValue();
                 oView.byId("tbHeaderTitle").setText("Store : " + strStore + " - " + strDepartmentDesc);
-
-                /*var centralStore =oLocalModel.getProperty("/BatchesCentralStore")
-                if(centralStore.length>0){
-                    var objCentralStore =oLocalModel.getProperty("/BatchesCentralStore")[0];
-                    var strCentralStore= objCentralStore.Store.StoreName;
-                    oView.byId("tbHeaderTitleCentral").setText("Store : " + strCentralStore + " - " + strDepartmentDesc+"("+centralStore.length+")");
-                }else{
-                    oView.byId("tbHeaderTitleCentral").setText("Store : Central Store - " + strDepartmentDesc+"(0)");
-                }*/
             },
 
             initializeEditableTemplate: function () {
@@ -268,6 +260,7 @@ sap.ui.define([
                         new TimePicker({
                             id:"tpMon",
                             valueState: "{=${LocalModel>Changed_Monday} === false?'Success':'Warning'}",
+                            valueStateText:"{LocalModel>ValueStateText}",
                             valueFormat:"HH:mm:ss",
                             displayFormat:"HH:mm:ss",
                             change:this.handleChange,
@@ -358,7 +351,9 @@ sap.ui.define([
             handleChange: function (oEvent) {
                
                 var oLocalModel = this.getModel("LocalModel");
+                var i18nModel = this.getModel("i18n").getResourceBundle();
                 var centralBatch = oLocalModel.getProperty("/BatchesCentralStore");
+
 
                 var inpSource = oEvent.getSource();
                 var tpId = oEvent.getParameter("id");
@@ -368,48 +363,63 @@ sap.ui.define([
                 var oContext = inpSource.getBindingContext("LocalModel");
                 var strBatchID = oContext.getProperty("BatchID");
 
-                
                 oLocalModel.setProperty(sPath + "/UpdatedBatch", true);
 
                 var filCentralBatch = centralBatch.filter(function(object, i) {
                     return object.BatchID === strBatchID;
                 });
 
+                // valueStateText
+
                 if(tpId.includes("Mon")){
-                    if(filCentralBatch.length >0)
+                    if(filCentralBatch.length >0){
                         oLocalModel.setProperty(sPath + "/Changed_Monday", filCentralBatch[0].Time_Monday.ms !== oContext.getProperty("Time_Monday").ms?true:false);
-                    else
+                        oLocalModel.setProperty(sPath +"/ValueStateText" , i18nModel.getText("Table_Cell_TimePicker_ValueStateText"));
+                    }else{
                         oLocalModel.setProperty(sPath + "/Changed_Monday",false);    
+                    }    
                 }else if(tpId.includes("Tues")){
-                    if(filCentralBatch.length >0)
+                    if(filCentralBatch.length >0){
                         oLocalModel.setProperty(sPath + "/Changed_Tuesday", filCentralBatch[0].Time_Tuesday.ms !== oContext.getProperty("Time_Tuesday").ms?true:false);
-                    else
-                        oLocalModel.setProperty(sPath + "/Changed_Tuesday",false);        
+                        oLocalModel.setProperty(sPath +"/ValueStateText" , i18nModel.getText("Table_Cell_TimePicker_ValueStateText"));
+                    }else{
+                        oLocalModel.setProperty(sPath + "/Changed_Tuesday",false);       
+                    }     
                 }else if(tpId.includes("Wed")){
-                    if(filCentralBatch.length >0)
+                    if(filCentralBatch.length >0){
                         oLocalModel.setProperty(sPath + "/Changed_Wednesday", filCentralBatch[0].Time_Wednesday.ms!== oContext.getProperty("Time_Wednesday").ms?true:false);
-                    else
-                        oLocalModel.setProperty(sPath + "/Changed_Wednesday",false);       
+                        oLocalModel.setProperty(sPath +"/ValueStateText" , i18nModel.getText("Table_Cell_TimePicker_ValueStateText"));
+                    }else{
+                        oLocalModel.setProperty(sPath + "/Changed_Wednesday",false);     
+                    }      
                 } else if(tpId.includes("Thurs")){
-                    if(filCentralBatch.length >0)
+                    if(filCentralBatch.length >0){
                         oLocalModel.setProperty(sPath + "/Changed_Thursday", filCentralBatch[0].Time_Thursday.ms !== oContext.getProperty("Time_Thursday").ms?true:false);
-                    else
+                        oLocalModel.setProperty(sPath +"/ValueStateText" , i18nModel.getText("Table_Cell_TimePicker_ValueStateText"));
+                    }else{
                         oLocalModel.setProperty(sPath + "/Changed_Thursday",false);      
+                    }    
                 } else if(tpId.includes("Fri")){
-                    if(filCentralBatch.length >0)
+                    if(filCentralBatch.length >0){
                         oLocalModel.setProperty(sPath + "/Changed_Friday", filCentralBatch[0].Time_Friday.ms !== oContext.getProperty("Time_Friday").ms?true:false);
-                    else
+                        oLocalModel.setProperty(sPath +"/ValueStateText" , i18nModel.getText("Table_Cell_TimePicker_ValueStateText"));
+                    }else{
                         oLocalModel.setProperty(sPath + "/Changed_Friday",false);    
+                    }    
                 } else if(tpId.includes("Sat")){
-                    if(filCentralBatch.length >0)
+                    if(filCentralBatch.length >0){
                         oLocalModel.setProperty(sPath + "/Changed_Saturday", filCentralBatch[0].Time_Saturday.ms !== oContext.getProperty("Time_Saturday").ms?true:false);
-                    else
+                        oLocalModel.setProperty(sPath +"/ValueStateText" , i18nModel.getText("Table_Cell_TimePicker_ValueStateText"));
+                    }else{
                         oLocalModel.setProperty(sPath + "/Changed_Saturday", false);   
+                    }    
                 } else if(tpId.includes("Sun")){
-                    if(filCentralBatch.length >0)
+                    if(filCentralBatch.length >0){
                         oLocalModel.setProperty(sPath + "/Changed_Sunday", filCentralBatch[0].Time_Sunday.ms !== oContext.getProperty("Time_Sunday").ms?true:false);
-                    else
-                        oLocalModel.setProperty(sPath + "/Changed_Sunday", false);       
+                        oLocalModel.setProperty(sPath +"/ValueStateText" , i18nModel.getText("Table_Cell_TimePicker_ValueStateText"));
+                    }else{
+                        oLocalModel.setProperty(sPath + "/Changed_Sunday", false);  
+                    }         
                 }    
             },
 
@@ -497,59 +507,61 @@ sap.ui.define([
                 var chargeDataCreated=chargeData.filter(function(data){
                     return data.ID === "";
                 });
-                
+
                 /// segregate update and new creation
-                MessageBox.confirm(i18nModel.getText("Message_Confirm_Update"), {
-                    title: i18nModel.getText("Confirm"),
-                    onClose: $.proxy(function (oAction) {
-                        if (oAction === MessageBox.Action.OK) {
+                if (this.validateCharge()) {
+                    MessageBox.confirm(i18nModel.getText("Message_Confirm_Update"), {
+                        title: i18nModel.getText("Confirm"),
+                        onClose: $.proxy(function (oAction) {
+                            if (oAction === MessageBox.Action.OK) {
 
-                            for (var i = 0; i < chargeDataUpdated.length; i++) {
-                                strDepdesc = chargeDataUpdated[i].Department.DepartmentDescription;
-                                if (chargeDataUpdated[i].ID !=="" && chargeDataUpdated[i].UpdatedBatch === true) {
-                                    nRecords=nRecords+1;
-                                    var payload = this.requestPayload(chargeDataUpdated[i]);
-                                    oModel.update("/Batches(guid'"+chargeDataUpdated[i].ID+"')",payload,{
-                                    success: $.proxy(function(oData) { 
-                                        nRecUpdated=nRecUpdated+1;
-                                        if (nRecords === nRecUpdated) {
-                                            this.chargeUpdateDeferred.resolve();
-                                        }
-                                    }, this),
-                                    error: $.proxy(function(error) {
-                                        MessageToast.show(error); 
-                                        this.chargeUpdateDeferred.reject();   
-                                    }, this)});
-                                }else{
-                                    this.chargeUpdateDeferred.resolve();
-                                }
-                            }
-
-                            //create charges
-                            $.when(this.chargeUpdateDeferred).done($.proxy(function() {
-                                if(chargeDataCreated.length >0){
-                                    for (var i = 0; i < chargeDataCreated.length; i++) {
-                                        nRecordsCreated=nRecordsCreated+1;
-                                        var payload = this.requestPayload(chargeDataCreated[i]);
-                                        oModel.create("/Batches", payload, {
+                                for (var i = 0; i < chargeDataUpdated.length; i++) {
+                                    strDepdesc = chargeDataUpdated[i].Department.DepartmentDescription;
+                                    if (chargeDataUpdated[i].ID !=="" && chargeDataUpdated[i].UpdatedBatch === true) {
+                                        nRecords=nRecords+1;
+                                        var payload = this.requestPayload(chargeDataUpdated[i]);
+                                        oModel.update("/Batches(guid'"+chargeDataUpdated[i].ID+"')",payload,{
                                         success: $.proxy(function(oData) { 
-                                            nRecCreated=nRecCreated+1;
-                                            if (nRecordsCreated === nRecCreated) {
-                                                    this.changeButtonVisibility("Create");
+                                            nRecUpdated=nRecUpdated+1;
+                                            if (nRecords === nRecUpdated) {
+                                                this.chargeUpdateDeferred.resolve();
                                             }
                                         }, this),
                                         error: $.proxy(function(error) {
                                             MessageToast.show(error); 
+                                            this.chargeUpdateDeferred.reject();   
                                         }, this)});
-                                    } 
-                                }else{
-                                    this.changeButtonVisibility("Create");
-                                }   
-                            }, this));
+                                    }else{
+                                        this.chargeUpdateDeferred.resolve();
+                                    }
+                                }
 
-                        }
-                    },this)   
-                });
+                                //create charges
+                                $.when(this.chargeUpdateDeferred).done($.proxy(function() {
+                                    if(chargeDataCreated.length >0){
+                                        for (var i = 0; i < chargeDataCreated.length; i++) {
+                                            nRecordsCreated=nRecordsCreated+1;
+                                            var payload = this.requestPayload(chargeDataCreated[i]);
+                                            oModel.create("/Batches", payload, {
+                                            success: $.proxy(function(oData) { 
+                                                nRecCreated=nRecCreated+1;
+                                                if (nRecordsCreated === nRecCreated) {
+                                                        this.changeButtonVisibility("Create");
+                                                }
+                                            }, this),
+                                            error: $.proxy(function(error) {
+                                                MessageToast.show(error); 
+                                            }, this)});
+                                        } 
+                                    }else{
+                                        this.changeButtonVisibility("Create");
+                                    }   
+                                }, this));
+
+                            }
+                        },this)   
+                    }); // messagebox
+                }   // end of if
             },
 
             handleChargeDelete:function(oEvent){
@@ -712,7 +724,91 @@ sap.ui.define([
                         this.changeButtonVisibility("Copy");
                     }    
                 }, this));     
-            },
+        },
+
+        validateCharge:function(){
+            var oLocalModel = this.getView().getModel("LocalModel");
+            var i18nModel = this.getOwnerComponent().getModel("i18n").getResourceBundle();
+            var batchesData = oLocalModel.getProperty("/Batches");
+            var messageText="";
+            var error=false;
+
+            for (var i = 0; i < batchesData.length; i++) {
+                for (var m = i + 1; m < batchesData.length; m++) {
+                    if (batchesData[m].Time_Monday.ms !== null) {
+                        if ((batchesData[m].Time_Monday.ms <= batchesData[i].Time_Monday.ms)) {
+                            error = true;
+                            messageText = i18nModel.getText("Validate_Charge_Monday",[batchesData[m].BatchID]);
+                            console.log("messageText>>>"+ messageText);
+                            break;
+                        } 
+                    }
+                    
+                    if (batchesData[m].Time_Tuesday !== null) {
+                        if ((batchesData[m].Time_Tuesday.ms <= batchesData[i].Time_Tuesday.ms)) {
+                            error = true;
+                            messageText = i18nModel.getText("Validate_Charge_Tuesday",[batchesData[m].BatchID]);
+                            console.log("messageText>>>"+ messageText);
+                            break;
+                        } 
+                    }
+                    if (batchesData[m].Time_Wednesday !== null) {
+                        if ((batchesData[m].Time_Wednesday.ms <= batchesData[i].Time_Wednesday.ms)) {
+                            error = true;
+                            messageText = i18nModel.getText("Validate_Charge_Wednesday",[batchesData[m].BatchID]);
+                            console.log("messageText>>>"+ messageText);
+                            break;
+                        } 
+                    }
+                    if (batchesData[m].Time_Thursday !== null) {
+                        if ((batchesData[m].Time_Thursday.ms <= batchesData[i].Time_Thursday.ms)) {
+                            error = true;
+                            messageText = i18nModel.getText("Validate_Charge_Thursday",[batchesData[m].BatchID]);
+                            console.log("messageText>>>"+ messageText);
+                            break;
+                        } 
+                    }
+                    if (batchesData[m].Time_Friday !== null) {
+                        if ((batchesData[m].Time_Friday.ms <= batchesData[i].Time_Friday.ms)) {
+                            error = true;
+                            messageText = i18nModel.getText("Validate_Charge_Friday",[batchesData[m].BatchID]);
+                            console.log("messageText>>>"+ messageText);
+                            break;
+                        } 
+                    }
+                    if (batchesData[m].Time_Saturday !== null) {
+                        if ((batchesData[m].Time_Saturday.ms <= batchesData[i].Time_Saturday.ms)) {
+                            error = true;
+                            messageText = i18nModel.getText("Validate_Charge_Saturday",[batchesData[m].BatchID]);
+                            console.log("messageText>>>"+ messageText);
+                            break;
+                        } 
+                    }
+
+                     if (batchesData[m].Time_Sunday !== null) {
+                        if ((batchesData[m].Time_Sunday.ms <= batchesData[i].Time_Sunday.ms)) {
+                            error = true;
+                            messageText = i18nModel.getText("Validate_Charge_Sunday",[batchesData[m].BatchID]);
+                            console.log("messageText>>>"+ messageText);
+                            break;
+                        } 
+                    }
+                }
+               
+                
+
+                if (error) {
+                    break;
+                }
+            }    
+            
+            if (error) {
+				MessageToast.show(messageText);
+            }
+            
+            return !error
+
+        }
 
             
 
