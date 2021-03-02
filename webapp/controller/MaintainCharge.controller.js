@@ -609,8 +609,7 @@ sap.ui.define([
                 var nRecCreated=0;
                 this.updateTableTitle();
 
-                //Do you want to Create a Charge for Store "+strStore+" and Department "+strBaf+"?",
-                MessageBox.confirm(i18nModel.getText("Message_Confirm_Delete"),{
+                MessageBox.confirm(i18nModel.getText("Message_Confirm_Create",[strStore]),{
                     title: i18nModel.getText("Confirm"),
                     onClose: $.proxy(function (oAction) {
                         if (oAction === MessageBox.Action.OK) {
