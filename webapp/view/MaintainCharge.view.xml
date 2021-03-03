@@ -42,7 +42,7 @@
                 </fb:filterGroupItems>   
             </fb:FilterBar>		
         </l:VerticalLayout>
-        <Panel>
+    
             <Table id="tbCharge" growing="true" growingThreshold="10" alternateRowColors="true" 
                 items="{path:'LocalModel>/Batches', sorter: { path: 'BatchID' }}" mode="Delete" delete="handleChargeDelete">
 				<headerToolbar>
@@ -136,6 +136,11 @@
 				</items>
             </Table>
             <Link id="linkAddCharge" class="test-right-float" press="handleAddNewCharge" text="{i18n>Link_AddCharge}" visible="false"/>
-        </Panel>    
+       
+        <footer>
+            <Toolbar>
+                <content/>
+            </Toolbar>   
+        </footer>    
     </Page>
 </mvc:View>

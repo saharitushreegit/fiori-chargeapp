@@ -14,20 +14,20 @@ sap.ui.define([
     'sap/ui/core/Fragment',
     'sap/ui/Device',
     'sap/m/TimePicker',
-    'sap/m/MessageToast',
-    'sap/m/BusyIndicator'
+    'sap/m/MessageToast'
     
 ],
 	/**
 	 * @param {typeof sap.ui.core.mvc.Controller} Controller
 	 */
     function (BaseController,DataManager, JSONModel, Filter, FilterOperator, ColumnListItem, Input, ObjectStatus, 
-        deepExtend, ValueState, MessageBox,Fragment,Device,TimePicker,MessageToast,BusyIndicator) {
+        deepExtend, ValueState, MessageBox,Fragment,Device,TimePicker,MessageToast) {
         "use strict";
 
         return BaseController.extend("com.sap.fiorichargeapp.controller.MaintainCharge", {
             onInit: function () {
                 this.oRouter = new sap.ui.core.UIComponent.getRouterFor(this);
+                this._oBusyIndicator = new sap.m.BusyDialog();
                  var oFilterModel = new JSONModel({
                     Stores: [],
                     Departments: [],
@@ -75,7 +75,6 @@ sap.ui.define([
 
                 var urlParameter = {};
 
-                
                 DataManager.read(oModel,"/Stores",filter,urlParameter,jQuery.proxy(function(oData) {
                     oLocalModel.setProperty("/Stores", oData.results);
                 },this), jQuery.proxy(function(oError){
@@ -89,7 +88,6 @@ sap.ui.define([
 
                 var urlParameter = {};
                 var filter = filterDep;
-
                 DataManager.read(oModel,"/Departments",filter,urlParameter,jQuery.proxy(function(oData) {
                     oLocalModel.setProperty("/Departments", oData.results);
                 },this), jQuery.proxy(function(oError){
@@ -274,7 +272,6 @@ sap.ui.define([
                         }),
                         new TimePicker({
                             id:"tpMon",
-                            //valueState: "{=${LocalModel>Changed_Monday} === false?'Success':'Warning'}",
                             valueState: "{LocalModel>ValueStateMonday}",
                             valueStateText:"{LocalModel>ValueStateText}",
                             valueFormat:"HH:mm:ss",
@@ -294,7 +291,6 @@ sap.ui.define([
                         }),
                         new TimePicker({
                             id:"tpWed",
-                            //valueState: "{=${LocalModel>Changed_Wednesday} === false?'Success':'Warning'}",
                             valueState: "{LocalModel>ValueStateWednesday}",
                             valueFormat:"HH:mm:ss",
                             displayFormat:"HH:mm:ss",
@@ -304,7 +300,6 @@ sap.ui.define([
                         }),
                         new TimePicker({
                             id:"tpThurs",
-                            //valueState: "{=${LocalModel>Changed_Thursday} === false?'Success':'Warning'}",
                             valueState: "{LocalModel>ValueStateThursday}",
                             valueFormat:"HH:mm:ss",
                             displayFormat:"HH:mm:ss",
@@ -314,7 +309,6 @@ sap.ui.define([
                         }),
                         new TimePicker({
                             id:"tpFri",
-                            //valueState: "{=${LocalModel>Changed_Friday} === false?'Success':'Warning'}",
                             valueState: "{LocalModel>ValueStateFriday}",
                             valueFormat:"HH:mm:ss",
                             displayFormat:"HH:mm:ss",
@@ -324,7 +318,6 @@ sap.ui.define([
                         }),
                         new TimePicker({
                             id:"tpSat",
-                            //valueState: "{=${LocalModel>Changed_Saturday} === false?'Success':'Warning'}",
                             valueState: "{LocalModel>ValueStateSaturday}",
                             valueFormat:"HH:mm:ss",
                             displayFormat:"HH:mm:ss",
@@ -334,7 +327,6 @@ sap.ui.define([
                         }),
                         new TimePicker({
                             id:"tpSun",
-                            //valueState: "{=${LocalModel>Changed_Sunday} === false?'Success':'Warning'}",
                             valueState: "{LocalModel>ValueStateSunday}",
                             valueFormat:"HH:mm:ss",
                             displayFormat:"HH:mm:ss",
@@ -389,9 +381,7 @@ sap.ui.define([
                 var filCentralBatch = centralBatch.filter(function(object, i) {
                     return object.BatchID === strBatchID;
                 });
-
-                // valueStateText
-
+                
                 if(tpId.includes("Mon")){
                     if(filCentralBatch.length >0){
                         changedCharge = filCentralBatch[0].Time_Monday.ms !== oContext.getProperty("Time_Monday").ms?true:false;
@@ -760,6 +750,13 @@ sap.ui.define([
                             object.ID="";
                             object.Store_StoreID=strStore;
                             object.UpdatedBatch = false;
+                            object.ValueStateMonday = "Success";
+                            object.ValueStateTuesday = "Success";
+                            object.ValueStateWednesday = "Success";
+                            object.ValueStateThursday = "Success";
+                            object.ValueStateFriday = "Success";
+                            object.ValueStateSaturday = "Success";
+                            object.ValueStateSunday = "Success";
                             tempArr.push(object);
                         },this);
                     
@@ -776,66 +773,85 @@ sap.ui.define([
             var messageText="";
             var error=false;
 
-            for (var i = 0; i < batchesData.length; i++) {
-                for (var m = i + 1; m < batchesData.length; m++) {
-                    if (batchesData[m].Time_Monday.ms !== null) {
-                        if ((batchesData[m].Time_Monday.ms <= batchesData[i].Time_Monday.ms)) {
-                            error = true;
-                            messageText = i18nModel.getText("Validate_Charge_Monday",[batchesData[m].BatchID]);
-                            oLocalModel.setProperty("/Batches/"+m+"/ValueStateMonday", "Error");
-                            console.log("messageText>>>"+ messageText);
-                            break;
-                        }
+            for (var i = 0; i < batchesData.length-1; i++) {
+                var next = i+1;
+                if (batchesData[next].Time_Monday.ms !== null) {
+                    if ((batchesData[next].Time_Monday.ms <= batchesData[i].Time_Monday.ms)) {
+                        error = true;
+                        messageText = i18nModel.getText("Validate_Charge_Monday",[batchesData[next].BatchID]);
+                        oLocalModel.setProperty("/Batches/"+next+"/ValueStateMonday", "Error");
+                        break;
+                    }else{
+                        var changed = oLocalModel.getProperty("/Batches/"+next+"/Changed_Monday");
+                        oLocalModel.setProperty("/Batches/"+next+"/ValueStateMonday", changed === false ?"Success":"Warning");
                     }
-                    
-                    if (batchesData[m].Time_Tuesday !== null) {
-                        if ((batchesData[m].Time_Tuesday.ms <= batchesData[i].Time_Tuesday.ms)) {
-                            error = true;
-                            messageText = i18nModel.getText("Validate_Charge_Tuesday",[batchesData[m].BatchID]);
-                            console.log("messageText>>>"+ messageText);
-                            break;
-                        } 
+                }
+                
+                if (batchesData[next].Time_Tuesday !== null) {
+                    if ((batchesData[next].Time_Tuesday.ms <= batchesData[i].Time_Tuesday.ms)) {
+                        error = true;
+                        messageText = i18nModel.getText("Validate_Charge_Tuesday",[batchesData[next].BatchID]);
+                        oLocalModel.setProperty("/Batches/"+next+"/ValueStateTuesday", "Error");
+                        break;
+                    } else{
+                        var changed = oLocalModel.getProperty("/Batches/"+next+"/Changed_Tuesday");
+                        oLocalModel.setProperty("/Batches/"+next+"/ValueStateTuesday", changed === false ?"Success":"Warning");
                     }
-                    if (batchesData[m].Time_Wednesday !== null) {
-                        if ((batchesData[m].Time_Wednesday.ms <= batchesData[i].Time_Wednesday.ms)) {
-                            error = true;
-                            messageText = i18nModel.getText("Validate_Charge_Wednesday",[batchesData[m].BatchID]);
-                            console.log("messageText>>>"+ messageText);
-                            break;
-                        } 
+                }
+                if (batchesData[next].Time_Wednesday !== null) {
+                    if ((batchesData[next].Time_Wednesday.ms <= batchesData[i].Time_Wednesday.ms)) {
+                        error = true;
+                        messageText = i18nModel.getText("Validate_Charge_Wednesday",[batchesData[next].BatchID]);
+                        oLocalModel.setProperty("/Batches/"+next+"/ValueStateWednesday", "Error");
+                        break;
+                    } else{
+                        var changed = oLocalModel.getProperty("/Batches/"+next+"/Changed_Wednesday");
+                        oLocalModel.setProperty("/Batches/"+next+"/ValueStateWednesday", changed === false ?"Success":"Warning");
                     }
-                    if (batchesData[m].Time_Thursday !== null) {
-                        if ((batchesData[m].Time_Thursday.ms <= batchesData[i].Time_Thursday.ms)) {
-                            error = true;
-                            messageText = i18nModel.getText("Validate_Charge_Thursday",[batchesData[m].BatchID]);
-                            console.log("messageText>>>"+ messageText);
-                            break;
-                        } 
+                }
+                if (batchesData[next].Time_Thursday !== null) {
+                    if ((batchesData[next].Time_Thursday.ms <= batchesData[i].Time_Thursday.ms)) {
+                        error = true;
+                        messageText = i18nModel.getText("Validate_Charge_Thursday",[batchesData[next].BatchID]);
+                        oLocalModel.setProperty("/Batches/"+next+"/ValueStateThursday", "Error");
+                        break;
+                    } else{
+                        var changed = oLocalModel.getProperty("/Batches/"+next+"/Changed_Thursday");
+                        oLocalModel.setProperty("/Batches/"+next+"/ValueStateThursday", changed === false ?"Success":"Warning");
                     }
-                    if (batchesData[m].Time_Friday !== null) {
-                        if ((batchesData[m].Time_Friday.ms <= batchesData[i].Time_Friday.ms)) {
-                            error = true;
-                            messageText = i18nModel.getText("Validate_Charge_Friday",[batchesData[m].BatchID]);
-                            console.log("messageText>>>"+ messageText);
-                            break;
-                        } 
+                }
+                if (batchesData[next].Time_Friday !== null) {
+                    if ((batchesData[next].Time_Friday.ms <= batchesData[i].Time_Friday.ms)) {
+                        error = true;
+                        messageText = i18nModel.getText("Validate_Charge_Friday",[batchesData[next].BatchID]);
+                        oLocalModel.setProperty("/Batches/"+next+"/ValueStateFriday", "Error");
+                        break;
+                    } else{
+                        var changed = oLocalModel.getProperty("/Batches/"+next+"/Changed_Friday");
+                        oLocalModel.setProperty("/Batches/"+next+"/ValueStateFriday", changed === false ?"Success":"Warning");
                     }
-                    if (batchesData[m].Time_Saturday !== null) {
-                        if ((batchesData[m].Time_Saturday.ms <= batchesData[i].Time_Saturday.ms)) {
-                            error = true;
-                            messageText = i18nModel.getText("Validate_Charge_Saturday",[batchesData[m].BatchID]);
-                            console.log("messageText>>>"+ messageText);
-                            break;
-                        } 
+                }
+                if (batchesData[next].Time_Saturday !== null) {
+                    if ((batchesData[next].Time_Saturday.ms <= batchesData[i].Time_Saturday.ms)) {
+                        error = true;
+                        messageText = i18nModel.getText("Validate_Charge_Saturday",[batchesData[next].BatchID]);
+                        oLocalModel.setProperty("/Batches/"+next+"/ValueStateSaturday", "Error");
+                        break;
+                    } else{
+                        var changed = oLocalModel.getProperty("/Batches/"+next+"/Changed_Saturday");
+                        oLocalModel.setProperty("/Batches/"+next+"/ValueStateSaturday", changed === false ?"Success":"Warning");
                     }
+                }
 
-                     if (batchesData[m].Time_Sunday !== null) {
-                        if ((batchesData[m].Time_Sunday.ms <= batchesData[i].Time_Sunday.ms)) {
-                            error = true;
-                            messageText = i18nModel.getText("Validate_Charge_Sunday",[batchesData[m].BatchID]);
-                            console.log("messageText>>>"+ messageText);
-                            break;
-                        } 
+                    if (batchesData[next].Time_Sunday !== null) {
+                    if ((batchesData[next].Time_Sunday.ms <= batchesData[i].Time_Sunday.ms)) {
+                        error = true;
+                        messageText = i18nModel.getText("Validate_Charge_Sunday",[batchesData[next].BatchID]);
+                        oLocalModel.setProperty("/Batches/"+next+"/ValueStateSunday", "Error");
+                        break;
+                    } else{
+                        var changed = oLocalModel.getProperty("/Batches/"+next+"/Changed_Sunday");
+                        oLocalModel.setProperty("/Batches/"+next+"/ValueStateSunday", changed === false ?"Success":"Warning");
                     }
                 }
                 if (error) {
