@@ -135,11 +135,12 @@ sap.ui.define([
 
             handleOnSearch: function (oEvent) {
 
-                var oLocalModel = this.getView().getModel("LocalModel");
+                var oView = this.getView();
                 var oModel = this.getOwnerComponent().getModel();
+                var oLocalModel = oView.getModel("LocalModel");
                 
-                var cbStore = this.getView().byId("cbStore");
-                var cbDepartment = this.getView().byId("cbDepartment");
+                var cbStore = oView.byId("cbStore");
+                var cbDepartment = oView.byId("cbDepartment");
 
                 var strStore = cbStore.getSelectedKey();
                 var valStore = cbStore.getValue();
@@ -168,6 +169,13 @@ sap.ui.define([
                         $.when(this.loadCentralStoreDeferred).done($.proxy(function() {
                             for (var i = 0; i < oData.results.length; i++) {
                                 oData.results[i].UpdatedBatch = false;
+                                oData.results[i].ValueStateMonday = oData.results[i].Changed_Monday === false?"Success":"Warning";
+                                oData.results[i].ValueStateTuesday = oData.results[i].Changed_Tuesday === false?"Success":"Warning";
+                                oData.results[i].ValueStateWednesday = oData.results[i].Changed_Wednesday === false?"Success":"Warning";
+                                oData.results[i].ValueStateThursday = oData.results[i].Changed_Thursday === false?"Success":"Warning";
+                                oData.results[i].ValueStateFriday = oData.results[i].Changed_Friday === false?"Success":"Warning";
+                                oData.results[i].ValueStateSaturday = oData.results[i].Changed_Saturday === false?"Success":"Warning";
+                                oData.results[i].ValueStateSunday = oData.results[i].Changed_Sunday === false?"Success":"Warning";
                             }
                             oLocalModel.setProperty("/Batches", oData.results);
                             this.updateTableTitle(); 
@@ -186,20 +194,27 @@ sap.ui.define([
                                     object.ID="";
                                     object.Store_StoreID=strStore;
                                     object.UpdatedBatch = false;
+                                    object.ValueStateMonday = "Success";
+                                    object.ValueStateTuesday = "Success";
+                                    object.ValueStateWednesday = "Success";
+                                    object.ValueStateThursday = "Success";
+                                    object.ValueStateFriday = "Success";
+                                    object.ValueStateSaturday = "Success";
+                                    object.ValueStateSunday = "Success";
                                     tempArr.push(object);
                                 },this);
                             
                                 oLocalModel.setProperty("/Batches", tempArr);
                                 this.rebindTable(this.oEditableTemplate, "Edit");   
-                                this.byId("editButton").setVisible(false);
-                                this.byId("cancelButton").setVisible(false);
-                                this.byId("createChargeButton").setVisible(true);
-                                this.byId("linkAddCharge").setVisible(true);
+                                oView.byId("editButton").setVisible(false);
+                                oView.byId("cancelButton").setVisible(false);
+                                oView.byId("createChargeButton").setVisible(true);
+                                oView.byId("linkAddCharge").setVisible(true);
                             }else{
-                                this.byId("editButton").setVisible(false);
-                                this.byId("cancelButton").setVisible(false);
-                                this.byId("createChargeButton").setVisible(false);
-                                this.byId("linkAddCharge").setVisible(true);
+                                oView.byId("editButton").setVisible(false);
+                                oView.byId("cancelButton").setVisible(false);
+                                oView.byId("createChargeButton").setVisible(false);
+                                oView.byId("linkAddCharge").setVisible(true);
                             }    
 
                             this.updateTableTitle(); 
@@ -214,10 +229,11 @@ sap.ui.define([
             loadCentralStoreCharge:function(){
 
                 this.loadCentralStoreDeferred = $.Deferred();
-                var oLocalModel = this.getView().getModel("LocalModel");
+                var oView = this.getView();
+                var oLocalModel = oView.getModel("LocalModel");
                 var oModel = this.getOwnerComponent().getModel();//this.getView().getModel();
 
-                var strDepartmentID = this.getView().byId("cbDepartment").getSelectedKey();
+                var strDepartmentID = oView.byId("cbDepartment").getSelectedKey();
                 
                 var storeFilter = new Filter("Store_StoreID", FilterOperator.EQ, '9999');
                 var deptFilter = new Filter("Department_DepartmentID", FilterOperator.EQ, strDepartmentID);
@@ -235,7 +251,6 @@ sap.ui.define([
 
                 DataManager.read(oModel,"/Batches",filter,urlParameter,jQuery.proxy(function(oData) {    
                     oLocalModel.setProperty("/BatchesCentralStore", oData.results);
-                    //this.getView().byId("tbCentralCharge").setVisible(true);
                     this.loadCentralStoreDeferred.resolve();
                 },this), jQuery.proxy(function(oError){
                    this.loadCentralStoreDeferred.reject();     
@@ -244,7 +259,7 @@ sap.ui.define([
 
             updateTableTitle:function(){
                 var oView = this.getView();
-                var oLocalModel = this.getView().getModel("LocalModel");
+                var oLocalModel = oView.getModel("LocalModel");
                 
                 var strStore = oView.byId("cbStore").getSelectedKey();
                 var strDepartmentDesc = oView.byId("cbDepartment").getValue();
@@ -259,7 +274,8 @@ sap.ui.define([
                         }),
                         new TimePicker({
                             id:"tpMon",
-                            valueState: "{=${LocalModel>Changed_Monday} === false?'Success':'Warning'}",
+                            //valueState: "{=${LocalModel>Changed_Monday} === false?'Success':'Warning'}",
+                            valueState: "{LocalModel>ValueStateMonday}",
                             valueStateText:"{LocalModel>ValueStateText}",
                             valueFormat:"HH:mm:ss",
                             displayFormat:"HH:mm:ss",
@@ -269,7 +285,7 @@ sap.ui.define([
                         }),
                         new TimePicker({
                             id:"tpTues",
-                            valueState: "{=${LocalModel>Changed_Tuesday} === false?'Success':'Warning'}",
+                            valueState: "{LocalModel>ValueStateTuesday}",
                             valueFormat:"HH:mm:ss",
                             displayFormat:"HH:mm:ss",
                             change:this.handleChange,
@@ -278,7 +294,8 @@ sap.ui.define([
                         }),
                         new TimePicker({
                             id:"tpWed",
-                            valueState: "{=${LocalModel>Changed_Wednesday} === false?'Success':'Warning'}",
+                            //valueState: "{=${LocalModel>Changed_Wednesday} === false?'Success':'Warning'}",
+                            valueState: "{LocalModel>ValueStateWednesday}",
                             valueFormat:"HH:mm:ss",
                             displayFormat:"HH:mm:ss",
                             change:this.handleChange,
@@ -287,7 +304,8 @@ sap.ui.define([
                         }),
                         new TimePicker({
                             id:"tpThurs",
-                            valueState: "{=${LocalModel>Changed_Thursday} === false?'Success':'Warning'}",
+                            //valueState: "{=${LocalModel>Changed_Thursday} === false?'Success':'Warning'}",
+                            valueState: "{LocalModel>ValueStateThursday}",
                             valueFormat:"HH:mm:ss",
                             displayFormat:"HH:mm:ss",
                             change:this.handleChange,
@@ -296,7 +314,8 @@ sap.ui.define([
                         }),
                         new TimePicker({
                             id:"tpFri",
-                            valueState: "{=${LocalModel>Changed_Friday} === false?'Success':'Warning'}",
+                            //valueState: "{=${LocalModel>Changed_Friday} === false?'Success':'Warning'}",
+                            valueState: "{LocalModel>ValueStateFriday}",
                             valueFormat:"HH:mm:ss",
                             displayFormat:"HH:mm:ss",
                             change:this.handleChange,
@@ -305,7 +324,8 @@ sap.ui.define([
                         }),
                         new TimePicker({
                             id:"tpSat",
-                            valueState: "{=${LocalModel>Changed_Saturday} === false?'Success':'Warning'}",
+                            //valueState: "{=${LocalModel>Changed_Saturday} === false?'Success':'Warning'}",
+                            valueState: "{LocalModel>ValueStateSaturday}",
                             valueFormat:"HH:mm:ss",
                             displayFormat:"HH:mm:ss",
                             change:this.handleChange,
@@ -314,7 +334,8 @@ sap.ui.define([
                         }),
                         new TimePicker({
                             id:"tpSun",
-                            valueState: "{=${LocalModel>Changed_Sunday} === false?'Success':'Warning'}",
+                            //valueState: "{=${LocalModel>Changed_Sunday} === false?'Success':'Warning'}",
+                            valueState: "{LocalModel>ValueStateSunday}",
                             valueFormat:"HH:mm:ss",
                             displayFormat:"HH:mm:ss",
                             change:this.handleChange,
@@ -353,7 +374,7 @@ sap.ui.define([
                 var oLocalModel = this.getModel("LocalModel");
                 var i18nModel = this.getModel("i18n").getResourceBundle();
                 var centralBatch = oLocalModel.getProperty("/BatchesCentralStore");
-
+                var changedCharge;
 
                 var inpSource = oEvent.getSource();
                 var tpId = oEvent.getParameter("id");
@@ -373,52 +394,73 @@ sap.ui.define([
 
                 if(tpId.includes("Mon")){
                     if(filCentralBatch.length >0){
-                        oLocalModel.setProperty(sPath + "/Changed_Monday", filCentralBatch[0].Time_Monday.ms !== oContext.getProperty("Time_Monday").ms?true:false);
+                        changedCharge = filCentralBatch[0].Time_Monday.ms !== oContext.getProperty("Time_Monday").ms?true:false;
+                        oLocalModel.setProperty(sPath + "/Changed_Monday", changedCharge);
+                        oLocalModel.setProperty(sPath +"/ValueStateMonday", changedCharge === false ? "Success":"Warning");
                         oLocalModel.setProperty(sPath +"/ValueStateText" , i18nModel.getText("Table_Cell_TimePicker_ValueStateText"));
                     }else{
-                        oLocalModel.setProperty(sPath + "/Changed_Monday",false);    
+                        oLocalModel.setProperty(sPath + "/Changed_Monday",false);   
+                        oLocalModel.setProperty(sPath +"/ValueStateMonday","Success"); 
                     }    
                 }else if(tpId.includes("Tues")){
                     if(filCentralBatch.length >0){
-                        oLocalModel.setProperty(sPath + "/Changed_Tuesday", filCentralBatch[0].Time_Tuesday.ms !== oContext.getProperty("Time_Tuesday").ms?true:false);
+                        changedCharge = filCentralBatch[0].Time_Tuesday.ms !== oContext.getProperty("Time_Tuesday").ms?true:false;
+                        oLocalModel.setProperty(sPath + "/Changed_Tuesday", changedCharge);
+                        oLocalModel.setProperty(sPath +"/ValueStateTuesday", changedCharge === false ? "Success":"Warning");
                         oLocalModel.setProperty(sPath +"/ValueStateText" , i18nModel.getText("Table_Cell_TimePicker_ValueStateText"));
                     }else{
                         oLocalModel.setProperty(sPath + "/Changed_Tuesday",false);       
+                        oLocalModel.setProperty(sPath +"/ValueStateTuesday","Success");
                     }     
                 }else if(tpId.includes("Wed")){
                     if(filCentralBatch.length >0){
-                        oLocalModel.setProperty(sPath + "/Changed_Wednesday", filCentralBatch[0].Time_Wednesday.ms!== oContext.getProperty("Time_Wednesday").ms?true:false);
+                        changedCharge = filCentralBatch[0].Time_Wednesday.ms!== oContext.getProperty("Time_Wednesday").ms?true:false;
+                        oLocalModel.setProperty(sPath + "/Changed_Wednesday", changedCharge);
+                        oLocalModel.setProperty(sPath +"/ValueStateWednesday", changedCharge === false ? "Success":"Warning");
                         oLocalModel.setProperty(sPath +"/ValueStateText" , i18nModel.getText("Table_Cell_TimePicker_ValueStateText"));
                     }else{
                         oLocalModel.setProperty(sPath + "/Changed_Wednesday",false);     
+                        oLocalModel.setProperty(sPath +"/ValueStateWednesday","Success"); 
                     }      
                 } else if(tpId.includes("Thurs")){
                     if(filCentralBatch.length >0){
-                        oLocalModel.setProperty(sPath + "/Changed_Thursday", filCentralBatch[0].Time_Thursday.ms !== oContext.getProperty("Time_Thursday").ms?true:false);
+                        changedCharge = filCentralBatch[0].Time_Thursday.ms!== oContext.getProperty("Time_Thursday").ms?true:false;
+                        oLocalModel.setProperty(sPath + "/Changed_Thursday", changedCharge);
+                        oLocalModel.setProperty(sPath +"/ValueStateThursday", changedCharge === false ? "Success":"Warning");
                         oLocalModel.setProperty(sPath +"/ValueStateText" , i18nModel.getText("Table_Cell_TimePicker_ValueStateText"));
                     }else{
-                        oLocalModel.setProperty(sPath + "/Changed_Thursday",false);      
+                        oLocalModel.setProperty(sPath + "/Changed_Thursday",false);     
+                        oLocalModel.setProperty(sPath +"/ValueStateThursday","Success");  
                     }    
                 } else if(tpId.includes("Fri")){
                     if(filCentralBatch.length >0){
-                        oLocalModel.setProperty(sPath + "/Changed_Friday", filCentralBatch[0].Time_Friday.ms !== oContext.getProperty("Time_Friday").ms?true:false);
+                        changedCharge = filCentralBatch[0].Time_Friday.ms!== oContext.getProperty("Time_Friday").ms?true:false;
+                        oLocalModel.setProperty(sPath + "/Changed_Friday", changedCharge);
+                        oLocalModel.setProperty(sPath +"/ValueStateFriday", changedCharge === false ? "Success":"Warning");
                         oLocalModel.setProperty(sPath +"/ValueStateText" , i18nModel.getText("Table_Cell_TimePicker_ValueStateText"));
                     }else{
-                        oLocalModel.setProperty(sPath + "/Changed_Friday",false);    
+                        oLocalModel.setProperty(sPath + "/Changed_Friday",false);  
+                        oLocalModel.setProperty(sPath +"/ValueStateFriday","Success");   
                     }    
                 } else if(tpId.includes("Sat")){
                     if(filCentralBatch.length >0){
-                        oLocalModel.setProperty(sPath + "/Changed_Saturday", filCentralBatch[0].Time_Saturday.ms !== oContext.getProperty("Time_Saturday").ms?true:false);
+                        changedCharge = filCentralBatch[0].Time_Saturday.ms!== oContext.getProperty("Time_Saturday").ms?true:false;
+                        oLocalModel.setProperty(sPath + "/Changed_Saturday", changedCharge);
+                        oLocalModel.setProperty(sPath +"/ValueStateSaturday", changedCharge === false ? "Success":"Warning");
                         oLocalModel.setProperty(sPath +"/ValueStateText" , i18nModel.getText("Table_Cell_TimePicker_ValueStateText"));
                     }else{
                         oLocalModel.setProperty(sPath + "/Changed_Saturday", false);   
+                        oLocalModel.setProperty(sPath +"/ValueStateSaturday","Success"); 
                     }    
                 } else if(tpId.includes("Sun")){
                     if(filCentralBatch.length >0){
-                        oLocalModel.setProperty(sPath + "/Changed_Sunday", filCentralBatch[0].Time_Sunday.ms !== oContext.getProperty("Time_Sunday").ms?true:false);
+                        changedCharge = filCentralBatch[0].Time_Sunday.ms !== oContext.getProperty("Time_Sunday").ms?true:false;
+                        oLocalModel.setProperty(sPath + "/Changed_Sunday", changedCharge);
+                        oLocalModel.setProperty(sPath +"/ValueStateSunday", changedCharge === false ? "Success":"Warning");
                         oLocalModel.setProperty(sPath +"/ValueStateText" , i18nModel.getText("Table_Cell_TimePicker_ValueStateText"));
                     }else{
                         oLocalModel.setProperty(sPath + "/Changed_Sunday", false);  
+                        oLocalModel.setProperty(sPath +"/ValueStateSunday","Success"); 
                     }         
                 }    
             },
@@ -649,9 +691,10 @@ sap.ui.define([
 
             handleAddNewCharge:function(oEvent){
 
-                var oLocalModel =this.getView().getModel("LocalModel");
-                var strStore = this.getView().byId("cbStore").getSelectedKey();
-                var strDept = this.getView().byId("cbDepartment").getSelectedKey();
+                var oView = this.getView();
+                var oLocalModel =oView.getModel("LocalModel");
+                var strStore = oView.byId("cbStore").getSelectedKey();
+                var strDept = oView.byId("cbDepartment").getSelectedKey();
 
                 var aCollection = oLocalModel.getProperty("/Batches");
                 //find if new entry created for fresh create or after Edit.
@@ -683,16 +726,16 @@ sap.ui.define([
                 };
                 
                 if(chargeDataUpdated.length >0){
-                    this.byId("saveButton").setVisible(true);
-                    this.byId("createChargeButton").setVisible(false);
+                    oView.byId("saveButton").setVisible(true);
+                    oView.byId("createChargeButton").setVisible(false);
                 }else{
-                    this.byId("saveButton").setVisible(false);
-                    this.byId("createChargeButton").setVisible(true);
+                    oView.byId("saveButton").setVisible(false);
+                    oView.byId("createChargeButton").setVisible(true);
                     if(aCollection.length === 0)
                         this.rebindTable(this.oEditableTemplate, "Edit");
                 }
                 
-                this.byId("cancelButton").setVisible(true);
+                oView.byId("cancelButton").setVisible(true);
                 //
                 aCollection.push(newEntry);
 			    oLocalModel.setProperty("/Batches", aCollection);
@@ -739,9 +782,10 @@ sap.ui.define([
                         if ((batchesData[m].Time_Monday.ms <= batchesData[i].Time_Monday.ms)) {
                             error = true;
                             messageText = i18nModel.getText("Validate_Charge_Monday",[batchesData[m].BatchID]);
+                            oLocalModel.setProperty("/Batches/"+m+"/ValueStateMonday", "Error");
                             console.log("messageText>>>"+ messageText);
                             break;
-                        } 
+                        }
                     }
                     
                     if (batchesData[m].Time_Tuesday !== null) {
@@ -794,9 +838,6 @@ sap.ui.define([
                         } 
                     }
                 }
-               
-                
-
                 if (error) {
                     break;
                 }
@@ -806,92 +847,7 @@ sap.ui.define([
 				MessageToast.show(messageText);
             }
             
-            return !error
-
+            return !error;
         }
-
-            
-
-    /**** not used ****/      
-    
-    /**/
-
-
-    /*getViewSettingsDialog: function (sDialogFragmentName) {
-                var pDialog = this._mViewSettingsDialogs[sDialogFragmentName];
-                
-                if (!pDialog) {
-                    pDialog = Fragment.load({
-                        id: this.getView().getId(),
-                        name: sDialogFragmentName,
-                        controller: this
-                    }).then(function (oDialog) {
-                        if (Device.system.desktop) {
-                            oDialog.addStyleClass("sapUiSizeCompact");
-                        }
-                        return oDialog;
-                    });
-                    this._mViewSettingsDialogs[sDialogFragmentName] = pDialog;
-                }
-                return pDialog;
-            },
-
-            onCreate: function () {
-                this.getViewSettingsDialog("com.sap.fiorichargeapp.view.fragment.CreateChargeFromCentral")
-                    .then(function (oViewSettingsDialog) {
-                        oViewSettingsDialog.open();
-                    });
-            },
-
-            handleClose: function(){
-                this.getViewSettingsDialog("com.sap.fiorichargeapp.view.fragment.CreateChargeFromCentral")
-                    .then(function (oViewSettingsDialog) {
-                        oViewSettingsDialog.close();
-                    });
-            }*/  
-            /*
-            new Input({
-                            id:"inpTuesday",
-                            value: "{LocalModel>Time_Tuesday}",
-                            valueState: "{=${LocalModel>Active_Tuesday} === true?'Success':'None'}",
-                            enabled: "{LocalModel>Active_Tuesday}",
-                            editable: "{LocalModel>Active_Tuesday}",
-                            liveChange: this.onLiveChange
-                        }), new Input({
-                            id:"inpWednesday",
-                            value: "{LocalModel>Time_Wednesday}",
-                            valueState: "{=${LocalModel>Active_Wednesday} === true?'Success':'None'}",
-                            enabled: "{LocalModel>Active_Wednesday}",
-                            editable: "{LocalModel>Active_Wednesday}",
-                            liveChange: this.onLiveChange
-                        }), new Input({
-                            id:"inpThursday",
-                            value: "{LocalModel>Time_Thursday}",
-                            valueState: "{=${LocalModel>Active_Thursday} === true?'Success':'None'}",
-                            enabled: "{LocalModel>Active_Thursday}",
-                            editable: "{LocalModel>Active_Thursday}",
-                            liveChange: this.onLiveChange
-                        }), new Input({
-                            id:"inpFriday",
-                            value: "{LocalModel>Time_Friday}",
-                            valueState: "{=${LocalModel>Active_Friday} === true?'Success':'None'}",
-                            enabled: "{LocalModel>Active_Friday}",
-                            editable: "{LocalModel>Active_Friday}",
-                            liveChange: this.onLiveChange
-                        }), new Input({
-                            id:"inpSaturday",
-                            value: "{LocalModel>Time_Saturday}",
-                            valueState: "{=${LocalModel>Active_Saturday} === true?'Success':'None'}",
-                            enabled: "{LocalModel>Active_Saturday}",
-                            editable: "{LocalModel>Active_Saturday}",
-                            liveChange: this.onLiveChange
-                        }), new Input({
-                            id:"inpSunday",
-                            value: "{LocalModel>Time_Sunday}",
-                            valueState: "{=${LocalModel>Active_Sunday} === true?'Success':'None'}",
-                            enabled: "{LocalModel>Active_Sunday}",
-                            editable: "{LocalModel>Active_Sunday}",
-                            liveChange: this.onLiveChange
-                        })*/
         });
     });
