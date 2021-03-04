@@ -15,7 +15,6 @@ sap.ui.define([
     'sap/ui/Device',
     'sap/m/TimePicker',
     'sap/m/MessageToast'
-    
 ],
 	/**
 	 * @param {typeof sap.ui.core.mvc.Controller} Controller
@@ -125,6 +124,7 @@ sap.ui.define([
 
                 var oView = this.getView();
                 var oModel = this.getOwnerComponent().getModel();
+                var i18nModel = this.getModel("i18n").getResourceBundle();
                 var oLocalModel = oView.getModel("LocalModel");
                 
                 var cbStore = oView.byId("cbStore");
@@ -132,50 +132,40 @@ sap.ui.define([
 
                 var strStore = cbStore.getSelectedKey();
                 var strDepartmentID = cbDepartment.getSelectedKey();
-                
-                oLocalModel.setProperty("/Batches",[]);
-                oLocalModel.setProperty("/BatchesCentralStore",[])
 
-                this.loadStoreSpecificBatches(strStore, strDepartmentID);
+                if(strStore !== "" && strDepartmentID != ""){
+                    oLocalModel.setProperty("/Batches",[]);
+                    oLocalModel.setProperty("/BatchesCentralStore",[])
 
-                $.when(this.loadStoreSpecBatchesDeferred).done($.proxy(function() {
-                    if(oLocalModel.getProperty("/Batches").length === 0){
-                        this.loadCentralStoreCharge();
-                        $.when(this.loadCentralStoreDeferred).done($.proxy(function() {
-                             var data =oLocalModel.getProperty("/BatchesCentralStore");
-                            if(data.length >0){
-                                var tempArr = this.adjustBatchDataStructure(data);
-                                /*data.forEach((v, i) => {
-                                    var object = JSON.parse(JSON.stringify(v));  // this has to be done to remove the object reference in Arr.
-                                    delete object.Store;
-                                    delete object.Department;
-                                    object.ID="";
-                                    object.Store_StoreID=strStore;
-                                    object.UpdatedBatch = false;
-                                    object.ValueStateMonday = "Success";
-                                    object.ValueStateTuesday = "Success";
-                                    object.ValueStateWednesday = "Success";
-                                    object.ValueStateThursday = "Success";
-                                    object.ValueStateFriday = "Success";
-                                    object.ValueStateSaturday = "Success";
-                                    object.ValueStateSunday = "Success";
-                                    tempArr.push(object);
-                                },this);*/
-                            
-                                oLocalModel.setProperty("/Batches", tempArr);
-                                this.rebindTable(this.oEditableTemplate, "Edit");  
-                                this.changeButtonVisibility("search"); 
-                                oView.byId("createChargeButton").setVisible(true);
-                            }else{
-                                this.changeButtonVisibility("search"); 
-                            }    
-                        }, this));        
-                    }else{
-                        this.updateTableTitle(); 
-                        this.byId("editButton").setVisible(true);
-                        this.byId("createChargeButton").setVisible(false);
-                    }
-                }, this));        
+                    this.loadStoreSpecificBatches(strStore, strDepartmentID);
+
+                    $.when(this.loadStoreSpecBatchesDeferred).done($.proxy(function() {
+                        if(oLocalModel.getProperty("/Batches").length === 0){
+                            this.loadCentralStoreCharge();
+                            $.when(this.loadCentralStoreDeferred).done($.proxy(function() {
+                                var data =oLocalModel.getProperty("/BatchesCentralStore");
+                                if(data.length >0){
+                                    var tempArr = this.adjustBatchDataStructure(data);
+                                    oLocalModel.setProperty("/Batches", tempArr);
+                                    this.rebindTable(this.oEditableTemplate, "Edit");  
+                                    this.changeButtonVisibility("search"); 
+                                    oView.byId("createChargeButton").setVisible(true);
+                                }else{
+                                    this.changeButtonVisibility("search"); 
+                                }    
+                            }, this));        
+                        }else{
+                            this.updateTableTitle(); 
+                            this.byId("editButton").setVisible(true);
+                            this.byId("createChargeButton").setVisible(false);
+                        }
+                    }, this));       
+                }else{
+                    if(strStore === "")
+                        MessageBox.warning(i18nModel.getText("Message_Warning_Store"));
+                    else
+                        MessageBox.warning(i18nModel.getText("Message_Warning_Department"));    
+                }   
             },
 
             loadStoreSpecificBatches:function (strStore, strDepartmentID){
@@ -905,7 +895,7 @@ sap.ui.define([
                         }
                     }
 
-                        if (batchesData[next].Time_Sunday !== null) {
+                    if (batchesData[next].Time_Sunday !== null) {
                         if ((batchesData[next].Time_Sunday.ms <= batchesData[i].Time_Sunday.ms)) {
                             error = true;
                             messageText = i18nModel.getText("Validate_Charge_Sunday",[batchesData[next].BatchID]);
