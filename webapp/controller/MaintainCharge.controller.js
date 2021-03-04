@@ -44,28 +44,11 @@ sap.ui.define([
             onRouteMatched: function (oEvent) {
                 var oNameParameter = oEvent.getParameter("name");
                 
-                console.log("oNameParameter -->" + oNameParameter);
-                if(oNameParameter === "Admin"){
-                    this.loadStores("Admin");
-                    this.loadDepartment();
-                }else{
-                    this.clearValues();
+                   this.clearValues();
                     this.loadStores();
-                    //this.loadDepartment();
-                }
             },
 
-            clearValues:function(){
-                var oView = this.getView();
-                oView.byId("cbStore").setValue(" ");
-                oView.byId("cbDepartment").setValue(" ");
-                oView.getModel("LocalModel").setProperty("/Batches",[]);
-                oView.getModel("LocalModel").setProperty("/Stores",[]);
-                oView.getModel("LocalModel").setProperty("/Departments",[]);
-                 oView.getModel("LocalModel").setProperty("/BatchesCentralStore",[]);
-            },
-
-            loadStores: function (strRole) {
+            loadStores: function () {
 
                 var oLocalModel = this.getView().getModel("LocalModel");
                 var oModel = this.getOwnerComponent().getModel();//this.getView().getModel();
@@ -78,7 +61,7 @@ sap.ui.define([
                 DataManager.read(oModel,"/Stores",filter,urlParameter,jQuery.proxy(function(oData) {
                     oLocalModel.setProperty("/Stores", oData.results);
                 },this), jQuery.proxy(function(oError){
-
+                    MessageToast.show(oError);
                 },this));
              },
 
@@ -91,21 +74,28 @@ sap.ui.define([
                 DataManager.read(oModel,"/Departments",filter,urlParameter,jQuery.proxy(function(oData) {
                     oLocalModel.setProperty("/Departments", oData.results);
                 },this), jQuery.proxy(function(oError){
+                    MessageToast.show(oError);
                     this.loadDepartmentDeferred.reject();
                 },this));
             },
 
             handleStoreChange: function (oEvent) {
                 var that = this;
-                var oLocalModel = that.getView().getModel("LocalModel");
-                var oModel = that.getOwnerComponent().getModel();
+                var oView = that.getView();
                 var filter = [];
-                var selectedStore = oEvent.oSource.getSelectedKey();
-                var cbDepartment =that.getView().byId("cbDepartment");
 
+                var oLocalModel = oView.getModel("LocalModel");
+                var oModel = that.getOwnerComponent().getModel();
+
+                var selectedStore = oEvent.oSource.getSelectedKey();
+                var cbDepartment = oView.byId("cbDepartment");
+                
+                that.changeButtonVisibility("storeChange");
+                cbDepartment.setValue(" ");
+                oLocalModel.setProperty("/Departments",[]);
                 oLocalModel.setProperty("/Batches",[]);
                 oLocalModel.setProperty("/BatchesCentralStore",[])
-               
+
                 if (selectedStore.length > 0) {
                     filter = [new sap.ui.model.Filter("StoreID", sap.ui.model.FilterOperator.EQ, selectedStore)];
                 }
@@ -141,51 +131,21 @@ sap.ui.define([
                 var cbDepartment = oView.byId("cbDepartment");
 
                 var strStore = cbStore.getSelectedKey();
-                var valStore = cbStore.getValue();
                 var strDepartmentID = cbDepartment.getSelectedKey();
-                var valDepartDesc = cbDepartment.getValue();
-
+                
                 oLocalModel.setProperty("/Batches",[]);
                 oLocalModel.setProperty("/BatchesCentralStore",[])
 
-                var storeFilter = new Filter("Store_StoreID", FilterOperator.EQ, strStore);
-                var depFilter = new Filter("Department_DepartmentID", FilterOperator.EQ, strDepartmentID);
+                this.loadStoreSpecificBatches(strStore, strDepartmentID);
 
-                var filter = []
-                filter.push(storeFilter);
-                filter.push(depFilter);
-
-                var expand = "Store,Department";
-                var urlParameter = {
-                    "$expand": expand,
-                    "$orderby":"BatchID"
-				};
-
-                this.loadCentralStoreCharge();
-                DataManager.read(oModel,"/Batches",filter,urlParameter,jQuery.proxy(function(oData) {
-                    if(oData.results.length >0){
+                $.when(this.loadStoreSpecBatchesDeferred).done($.proxy(function() {
+                    if(oLocalModel.getProperty("/Batches").length === 0){
+                        this.loadCentralStoreCharge();
                         $.when(this.loadCentralStoreDeferred).done($.proxy(function() {
-                            for (var i = 0; i < oData.results.length; i++) {
-                                oData.results[i].UpdatedBatch = false;
-                                oData.results[i].ValueStateMonday = oData.results[i].Changed_Monday === false?"Success":"Warning";
-                                oData.results[i].ValueStateTuesday = oData.results[i].Changed_Tuesday === false?"Success":"Warning";
-                                oData.results[i].ValueStateWednesday = oData.results[i].Changed_Wednesday === false?"Success":"Warning";
-                                oData.results[i].ValueStateThursday = oData.results[i].Changed_Thursday === false?"Success":"Warning";
-                                oData.results[i].ValueStateFriday = oData.results[i].Changed_Friday === false?"Success":"Warning";
-                                oData.results[i].ValueStateSaturday = oData.results[i].Changed_Saturday === false?"Success":"Warning";
-                                oData.results[i].ValueStateSunday = oData.results[i].Changed_Sunday === false?"Success":"Warning";
-                            }
-                            oLocalModel.setProperty("/Batches", oData.results);
-                            this.updateTableTitle(); 
-                            this.byId("editButton").setVisible(true);
-                            this.byId("createChargeButton").setVisible(false);
-                        }, this));    
-                    }else{
-                        $.when(this.loadCentralStoreDeferred).done($.proxy(function() {
-                            var data =oLocalModel.getProperty("/BatchesCentralStore");
+                             var data =oLocalModel.getProperty("/BatchesCentralStore");
                             if(data.length >0){
-                                var tempArr =[];
-                                data.forEach((v, i) => {
+                                var tempArr = this.adjustBatchDataStructure(data);
+                                /*data.forEach((v, i) => {
                                     var object = JSON.parse(JSON.stringify(v));  // this has to be done to remove the object reference in Arr.
                                     delete object.Store;
                                     delete object.Department;
@@ -200,28 +160,63 @@ sap.ui.define([
                                     object.ValueStateSaturday = "Success";
                                     object.ValueStateSunday = "Success";
                                     tempArr.push(object);
-                                },this);
+                                },this);*/
                             
                                 oLocalModel.setProperty("/Batches", tempArr);
-                                this.rebindTable(this.oEditableTemplate, "Edit");   
-                                oView.byId("editButton").setVisible(false);
-                                oView.byId("cancelButton").setVisible(false);
+                                this.rebindTable(this.oEditableTemplate, "Edit");  
+                                this.changeButtonVisibility("search"); 
                                 oView.byId("createChargeButton").setVisible(true);
-                                oView.byId("linkAddCharge").setVisible(true);
                             }else{
-                                oView.byId("editButton").setVisible(false);
-                                oView.byId("cancelButton").setVisible(false);
-                                oView.byId("createChargeButton").setVisible(false);
-                                oView.byId("linkAddCharge").setVisible(true);
+                                this.changeButtonVisibility("search"); 
                             }    
+                        }, this));        
+                    }else{
+                        this.updateTableTitle(); 
+                        this.byId("editButton").setVisible(true);
+                        this.byId("createChargeButton").setVisible(false);
+                    }
+                }, this));        
+            },
 
-                            this.updateTableTitle(); 
-                        }, this));
-                    }       
-                    
+            loadStoreSpecificBatches:function (strStore, strDepartmentID){
+                this.loadStoreSpecBatchesDeferred = $.Deferred();
+                var oView = this.getView();
+                var oModel = this.getOwnerComponent().getModel();
+                var oLocalModel = oView.getModel("LocalModel");
+                
+                var storeFilter = new Filter("Store_StoreID", FilterOperator.EQ, strStore);
+                var depFilter = new Filter("Department_DepartmentID", FilterOperator.EQ, strDepartmentID);
+
+                var filter = []
+                filter.push(storeFilter);
+                filter.push(depFilter);
+
+                var expand = "Store,Department";
+                var urlParameter = {
+                    "$expand": expand,
+                    "$orderby":"BatchID"
+                };
+                DataManager.read(oModel,"/Batches",filter,urlParameter,jQuery.proxy(function(oData) {
+                    for (var i = 0; i < oData.results.length; i++) {
+                        oData.results[i].UpdatedBatch = false;
+                        oData.results[i].ValueStateMonday = oData.results[i].Changed_Monday === false?"Success":"Warning";
+                        oData.results[i].ValueStateTuesday = oData.results[i].Changed_Tuesday === false?"Success":"Warning";
+                        oData.results[i].ValueStateWednesday = oData.results[i].Changed_Wednesday === false?"Success":"Warning";
+                        oData.results[i].ValueStateThursday = oData.results[i].Changed_Thursday === false?"Success":"Warning";
+                        oData.results[i].ValueStateFriday = oData.results[i].Changed_Friday === false?"Success":"Warning";
+                        oData.results[i].ValueStateSaturday = oData.results[i].Changed_Saturday === false?"Success":"Warning";
+                        oData.results[i].ValueStateSunday = oData.results[i].Changed_Sunday === false?"Success":"Warning";
+                    }
+                    oLocalModel.setProperty("/Batches", oData.results);
+                    this.updateTableTitle(); 
+                    this.loadStoreSpecBatchesDeferred.resolve();
+
                 },this), jQuery.proxy(function(oError){
+                    MessageToast.show(oError);
+                    this.loadStoreSpecBatchesDeferred.reject();
 
-                },this));
+                },this)); 
+
             },
 
             loadCentralStoreCharge:function(){
@@ -455,64 +450,7 @@ sap.ui.define([
                 }    
             },
 
-            requestPayload:function(chargeData){
-                var payload = {
-                    "Store_StoreID": chargeData.Store_StoreID,
-                    "Department_DepartmentID": chargeData.Department_DepartmentID,
-                    "BatchID": chargeData.BatchID,
-                    "Changed_Monday": chargeData.Changed_Monday,
-                    "Changed_Tuesday": chargeData.Changed_Tuesday,
-                    "Changed_Wednesday": chargeData.Changed_Wednesday,
-                    "Changed_Thursday": chargeData.Changed_Thursday,
-                    "Changed_Friday": chargeData.Changed_Friday,
-                    "Changed_Saturday": chargeData.Changed_Saturday,
-                    "Changed_Sunday": chargeData.Changed_Sunday,
-                    "Time_Monday": chargeData.Time_Monday,
-                    "Time_Tuesday": chargeData.Time_Tuesday,
-                    "Time_Wednesday": chargeData.Time_Wednesday,
-                    "Time_Thursday": chargeData.Time_Thursday,
-                    "Time_Friday": chargeData.Time_Friday,
-                    "Time_Saturday": chargeData.Time_Saturday,
-                    "Time_Sunday": chargeData.Time_Sunday,
-                }
-
-                return payload;
-            },
-
-            changeButtonVisibility:function(mode){
-
-                var oView = this.getView();
-
-                if(mode === "Create"){
-                    oView.byId("createChargeButton").setVisible(false);
-                    oView.byId("cancelButton").setVisible(false);
-                    oView.byId("linkAddCharge").setVisible(false);
-                    oView.byId("saveButton").setVisible(false);
-                    oView.byId("editButton").setVisible(true);
-                    this.rebindTable(this.oReadOnlyTemplate, "Navigation");
-                }else if(mode === "Delete"){
-                    oView.byId("createChargeButton").setVisible(false);
-                    oView.byId("cancelButton").setVisible(false);
-                    oView.byId("saveButton").setVisible(false);
-                    oView.byId("editButton").setVisible(false);
-                    oView.byId("linkAddCharge").setVisible(true);
-                }else if(mode === "Copy"){
-                    oView.byId("copyCentralButton").setVisible(false);
-                    oView.byId("createChargeButton").setVisible(true);
-                    oView.byId("cancelButton").setVisible(true);
-                    this.rebindTable(this.oEditableTemplate, "Edit");   
-                }else if(mode === "Edit"){
-                    oView.byId("editButton").setVisible(false);
-                    oView.byId("saveButton").setVisible(true);
-                    oView.byId("cancelButton").setVisible(true);
-                    oView.byId("linkAddCharge").setVisible(true);
-                }else if(mode === "Cancel"){
-                    oView.byId("cancelButton").setVisible(false);
-                    oView.byId("saveButton").setVisible(false);
-                    oView.byId("editButton").setVisible(true);
-                }
-            },
-
+            
             handleChargeUpdate: function (oEvent) {
 
                 this.chargeUpdateDeferred = $.Deferred();
@@ -522,7 +460,7 @@ sap.ui.define([
                 var i18nModel = this.getOwnerComponent().getModel("i18n").getResourceBundle();
 
                 var strStore = this.getView().byId("cbStore").getSelectedKey();
-                var valDept = this.getView().byId("cbDepartment").getValue();
+                var strDepartmentID = this.getView().byId("cbDepartment").getSelectedKey();
 
                 var strDepdesc ="";
                 var nRecords = 0;
@@ -578,7 +516,8 @@ sap.ui.define([
                                             success: $.proxy(function(oData) { 
                                                 nRecCreated=nRecCreated+1;
                                                 if (nRecordsCreated === nRecCreated) {
-                                                        this.changeButtonVisibility("Create");
+                                                    this.changeButtonVisibility("Create");
+                                                    this.loadStoreSpecificBatches(strStore, strDepartmentID);
                                                 }
                                             }, this),
                                             error: $.proxy(function(error) {
@@ -598,16 +537,19 @@ sap.ui.define([
 
             handleChargeDelete:function(oEvent){
 
+                var oView = this.getView();
                 var oModel = this.getOwnerComponent().getModel(); //this.getView().getModel();
                 var i18nModel = this.getOwnerComponent().getModel("i18n").getResourceBundle();
-                var oLocalModel = this.getView().getModel("LocalModel");    
+                var oLocalModel = oView.getModel("LocalModel");    
+
                 var oParameter = oEvent.getParameter("listItem");
                 var selectedBatch = oParameter.getBindingContext("LocalModel").getObject();
                 var path = oParameter.getBindingContext("LocalModel").getPath();
                 var indexToDelete = path.substring(path.lastIndexOf("/") + 1);
                 var chargeData = oLocalModel.getProperty("/Batches");
+                var tblCharge =oView.byId("tbCharge");
 
-                var valDept = this.getView().byId("cbDepartment").getValue();
+                var valDept = oView.byId("cbDepartment").getValue();
 
                 MessageBox.confirm(i18nModel.getText("Message_Confirm_Delete"), {
 				title: i18nModel.getText("Confirm"),
@@ -619,9 +561,24 @@ sap.ui.define([
                                         chargeData.splice(indexToDelete, 1);
                                         oLocalModel.setProperty("/Batches", chargeData);
                                         this.changeButtonVisibility("Delete");
-                                        if(chargeData.length === 0)
-                                            this.getView().byId("copyCentralButton").setVisible(true);
-                                        MessageToast.show("Charge "+selectedBatch.BatchID+" for Department "+ valDept + " is deleted.");
+                                        if(tblCharge.getKeyboardMode() === "Navigation"){
+                                            oView.byId("editButton").setVisible(true);
+                                            if(chargeData.length === 0){
+                                                oView.byId("copyCentralButton").setVisible(true);
+                                                oView.byId("editButton").setVisible(false);
+                                            }
+                                        }else if(tblCharge.getKeyboardMode() === "Edit"){  
+                                            oView.byId("saveButton").setVisible(true);
+                                            oView.byId("cancelButton").setVisible(true);
+                                            if(chargeData.length === 0){
+                                                oView.byId("copyCentralButton").setVisible(true);
+                                                oView.byId("saveButton").setVisible(false);
+                                                oView.byId("cancelButton").setVisible(false);
+                                            }
+                                        }
+                                        
+                                        MessageToast.show(i18nModel.getText("Message_Delete_Per_Charge",[selectedBatch.BatchID, valDept]));
+                                        
                                     }, this),
                                     error: $.proxy(function(oError) {
                                         MessageToast.show(oError);
@@ -631,10 +588,16 @@ sap.ui.define([
                                 chargeData.splice(indexToDelete, 1);
                                 oLocalModel.setProperty("/Batches", chargeData);
                                 this.changeButtonVisibility("Delete");
-                                if(chargeData.length === 0)
-                                    this.getView().byId("copyCentralButton").setVisible(true);
-                                
-                                MessageToast.show("Charge "+selectedBatch.BatchID+" for Department "+ valDept + " is deleted.");
+                                oView.byId("createChargeButton").setVisible(true);
+                                oView.byId("cancelButton").setVisible(true);
+                                if(chargeData.length === 0){
+                                    oView.byId("createChargeButton").setVisible(false);
+                                    oView.byId("copyCentralButton").setVisible(true);
+                                    oView.byId("cancelButton").setVisible(false);
+                                    oView.byId("editButton").setVisible(false);
+                                    oView.byId("saveButton").setVisible(false);
+                                }    
+                                MessageToast.show(i18nModel.getText("Message_Delete_Per_Charge",[selectedBatch.BatchID, valDept]));
                             }
                         }
                     },this)   
@@ -642,41 +605,46 @@ sap.ui.define([
             },
 
             handleChargeCreate:function(oEvent){
+
+                var oView = this.getView();
                 var oModel = this.getOwnerComponent().getModel(); //this.getView().getModel();
-                var oLocalModel = this.getView().getModel("LocalModel");
                 var i18nModel = this.getOwnerComponent().getModel("i18n").getResourceBundle();
-                var strStore = this.getView().byId("cbStore").getSelectedKey();
-                var strBaf = this.getView().byId("cbDepartment").getSelectedKey();
+                var oLocalModel = oView.getModel("LocalModel");
+                var strStore = oView.byId("cbStore").getSelectedKey();
+                var strDepartment = oView.byId("cbDepartment").getSelectedKey();
 
                 var chargeData = oLocalModel.getProperty("/Batches");
                 var nRecords=0;
                 var nRecCreated=0;
                 this.updateTableTitle();
 
-                MessageBox.confirm(i18nModel.getText("Message_Confirm_Create",[strStore]),{
-                    title: i18nModel.getText("Confirm"),
-                    onClose: $.proxy(function (oAction) {
-                        if (oAction === MessageBox.Action.OK) {
+                if (this.validateCharge()) {
+                    MessageBox.confirm(i18nModel.getText("Message_Confirm_Create",[strStore]),{
+                        title: i18nModel.getText("Confirm"),
+                        onClose: $.proxy(function (oAction) {
+                            if (oAction === MessageBox.Action.OK) {
 
-                            //oModel.setDeferredGroups(["CreateBatch"]);
-                            for (var i = 0; i < chargeData.length; i++) {
-                                nRecords++;
-                                var payload = this.requestPayload(chargeData[i]);
-                                 oModel.create("/Batches", payload, {
-                                     success: $.proxy(function(oData) {
-                                        nRecCreated++;
-                                        if (nRecords === nRecCreated) {
-                                            this.changeButtonVisibility("Create");
-                                        }
-                                    }, this),
-                                    error: $.proxy(function(oError) {
-                                            MessageToast.show(oError);
-                                    }, this)
-                                 });
+                                //oModel.setDeferredGroups(["CreateBatch"]);
+                                for (var i = 0; i < chargeData.length; i++) {
+                                    nRecords++;
+                                    var payload = this.requestPayload(chargeData[i]);
+                                    oModel.create("/Batches", payload, {
+                                        success: $.proxy(function(oData) {
+                                            nRecCreated++;
+                                            if (nRecords === nRecCreated) {
+                                                this.changeButtonVisibility("Create");
+                                                this.loadStoreSpecificBatches(strStore, strDepartment);
+                                            }
+                                        }, this),
+                                        error: $.proxy(function(oError) {
+                                                MessageToast.show(oError);
+                                        }, this)
+                                    });
+                                }
                             }
-                        }
-                    },this)   
-                });
+                        },this)   
+                    });
+                } // end of if    
             },
 
             handleAddNewCharge:function(oEvent){
@@ -696,8 +664,8 @@ sap.ui.define([
                 ++nRecords;
                 var newEntry =  {
                     "ID": "",
-					"BatchID": nRecords,
-					"Changed_Monday": false,
+                    "BatchID": nRecords,
+                    "Changed_Monday": false,
                     "Time_Monday": null,
                     "Changed_Tuesday": false,
                     "Time_Tuesday": null,
@@ -728,7 +696,7 @@ sap.ui.define([
                 oView.byId("cancelButton").setVisible(true);
                 //
                 aCollection.push(newEntry);
-			    oLocalModel.setProperty("/Batches", aCollection);
+                oLocalModel.setProperty("/Batches", aCollection);
             },
 
             handleCopyFromCentral:function(){
@@ -742,128 +710,222 @@ sap.ui.define([
                 $.when(this.loadCentralStoreDeferred).done($.proxy(function() {
                     var data =oLocalModel.getProperty("/BatchesCentralStore");
                     if(data.length >0){
-                        var tempArr =[];
-                        data.forEach((v, i) => {
-                            var object = JSON.parse(JSON.stringify(v));  // this has to be done to remove the object reference in Arr.
-                            delete object.Store;
-                            delete object.Department;
-                            object.ID="";
-                            object.Store_StoreID=strStore;
-                            object.UpdatedBatch = false;
-                            object.ValueStateMonday = "Success";
-                            object.ValueStateTuesday = "Success";
-                            object.ValueStateWednesday = "Success";
-                            object.ValueStateThursday = "Success";
-                            object.ValueStateFriday = "Success";
-                            object.ValueStateSaturday = "Success";
-                            object.ValueStateSunday = "Success";
-                            tempArr.push(object);
-                        },this);
-                    
+                        var tempArr = this.adjustBatchDataStructure(data);
                         oLocalModel.setProperty("/Batches", tempArr);
                         this.changeButtonVisibility("Copy");
                     }    
                 }, this));     
-        },
+            },
 
-        validateCharge:function(){
-            var oLocalModel = this.getView().getModel("LocalModel");
-            var i18nModel = this.getOwnerComponent().getModel("i18n").getResourceBundle();
-            var batchesData = oLocalModel.getProperty("/Batches");
-            var messageText="";
-            var error=false;
+            adjustBatchDataStructure:function(data){
 
-            for (var i = 0; i < batchesData.length-1; i++) {
-                var next = i+1;
-                if (batchesData[next].Time_Monday.ms !== null) {
-                    if ((batchesData[next].Time_Monday.ms <= batchesData[i].Time_Monday.ms)) {
-                        error = true;
-                        messageText = i18nModel.getText("Validate_Charge_Monday",[batchesData[next].BatchID]);
-                        oLocalModel.setProperty("/Batches/"+next+"/ValueStateMonday", "Error");
-                        break;
-                    }else{
-                        var changed = oLocalModel.getProperty("/Batches/"+next+"/Changed_Monday");
-                        oLocalModel.setProperty("/Batches/"+next+"/ValueStateMonday", changed === false ?"Success":"Warning");
+                var strStore =  this.getView().byId("cbStore").getSelectedKey();
+                var tempArr =[];
+                data.forEach((v, i) => {
+                    var object = JSON.parse(JSON.stringify(v));  // this has to be done to remove the object reference in Arr.
+                    delete object.Store;
+                    delete object.Department;
+                    object.ID="";
+                    object.Store_StoreID=strStore;
+                    object.UpdatedBatch = false;
+                    object.ValueStateMonday = "Success";
+                    object.ValueStateTuesday = "Success";
+                    object.ValueStateWednesday = "Success";
+                    object.ValueStateThursday = "Success";
+                    object.ValueStateFriday = "Success";
+                    object.ValueStateSaturday = "Success";
+                    object.ValueStateSunday = "Success";
+                    tempArr.push(object);
+                },this);
+
+                return tempArr;
+
+            },
+
+            requestPayload:function(chargeData){
+                var payload = {
+                    "Store_StoreID": chargeData.Store_StoreID,
+                    "Department_DepartmentID": chargeData.Department_DepartmentID,
+                    "BatchID": chargeData.BatchID,
+                    "Changed_Monday": chargeData.Changed_Monday,
+                    "Changed_Tuesday": chargeData.Changed_Tuesday,
+                    "Changed_Wednesday": chargeData.Changed_Wednesday,
+                    "Changed_Thursday": chargeData.Changed_Thursday,
+                    "Changed_Friday": chargeData.Changed_Friday,
+                    "Changed_Saturday": chargeData.Changed_Saturday,
+                    "Changed_Sunday": chargeData.Changed_Sunday,
+                    "Time_Monday": chargeData.Time_Monday,
+                    "Time_Tuesday": chargeData.Time_Tuesday,
+                    "Time_Wednesday": chargeData.Time_Wednesday,
+                    "Time_Thursday": chargeData.Time_Thursday,
+                    "Time_Friday": chargeData.Time_Friday,
+                    "Time_Saturday": chargeData.Time_Saturday,
+                    "Time_Sunday": chargeData.Time_Sunday,
+                }
+
+                return payload;
+            },
+
+            clearValues:function(){
+                var oView = this.getView();
+                oView.byId("cbStore").setValue(" ");
+                oView.byId("cbDepartment").setValue(" ");
+                oView.getModel("LocalModel").setProperty("/Batches",[]);
+                oView.getModel("LocalModel").setProperty("/Stores",[]);
+                oView.getModel("LocalModel").setProperty("/Departments",[]);
+                 oView.getModel("LocalModel").setProperty("/BatchesCentralStore",[]);
+            },
+
+            changeButtonVisibility:function(mode){
+
+                    var oView = this.getView();
+
+                    if(mode === "Create"){
+                        oView.byId("createChargeButton").setVisible(false);
+                        oView.byId("cancelButton").setVisible(false);
+                        oView.byId("linkAddCharge").setVisible(false);
+                        oView.byId("saveButton").setVisible(false);
+                        oView.byId("editButton").setVisible(true);
+                        this.rebindTable(this.oReadOnlyTemplate, "Navigation");
+                    }else if(mode === "Delete"){
+                        oView.byId("createChargeButton").setVisible(false);
+                        oView.byId("cancelButton").setVisible(false);
+                        oView.byId("saveButton").setVisible(false);
+                        oView.byId("editButton").setVisible(false);
+                        oView.byId("copyCentralButton").setVisible(false);
+                        oView.byId("linkAddCharge").setVisible(true);
+                    }else if(mode === "Copy"){
+                        oView.byId("copyCentralButton").setVisible(false);
+                        oView.byId("createChargeButton").setVisible(true);
+                        oView.byId("cancelButton").setVisible(true);
+                        oView.byId("editButton").setVisible(false);
+                        oView.byId("saveButton").setVisible(false);
+                        this.rebindTable(this.oEditableTemplate, "Edit");   
+                    }else if(mode === "Edit"){
+                        oView.byId("editButton").setVisible(false);
+                        oView.byId("saveButton").setVisible(true);
+                        oView.byId("cancelButton").setVisible(true);
+                        oView.byId("linkAddCharge").setVisible(true);
+                    }else if(mode === "Cancel"){
+                        oView.byId("cancelButton").setVisible(false);
+                        oView.byId("saveButton").setVisible(false);
+                        oView.byId("createChargeButton").setVisible(false);
+                        oView.byId("editButton").setVisible(true);
+                    }else if(mode === "storeChange"){
+                        oView.byId("cancelButton").setVisible(false);
+                        oView.byId("editButton").setVisible(false);
+                        oView.byId("saveButton").setVisible(false);
+                        oView.byId("linkAddCharge").setVisible(false);
+                        oView.byId("copyCentralButton").setVisible(false);
+                        oView.byId("createChargeButton").setVisible(false);
+                    }else if(mode === "search"){
+                        oView.byId("editButton").setVisible(false);
+                        oView.byId("cancelButton").setVisible(false);
+                        oView.byId("linkAddCharge").setVisible(true);
+                        oView.byId("createChargeButton").setVisible(false);
+                        oView.byId("copyCentralButton").setVisible(false);
                     }
+            },
+        
+
+            validateCharge:function(){
+                var oLocalModel = this.getView().getModel("LocalModel");
+                var i18nModel = this.getOwnerComponent().getModel("i18n").getResourceBundle();
+                var batchesData = oLocalModel.getProperty("/Batches");
+                var messageText="";
+                var error=false;
+
+                for (var i = 0; i < batchesData.length-1; i++) {
+                    var next = i+1;
+                    if (batchesData[next].Time_Monday.ms !== null) {
+                        if ((batchesData[next].Time_Monday.ms <= batchesData[i].Time_Monday.ms)) {
+                            error = true;
+                            messageText = i18nModel.getText("Validate_Charge_Monday",[batchesData[next].BatchID]);
+                            oLocalModel.setProperty("/Batches/"+next+"/ValueStateMonday", "Error");
+                            break;
+                        }else{
+                            var changed = oLocalModel.getProperty("/Batches/"+next+"/Changed_Monday");
+                            oLocalModel.setProperty("/Batches/"+next+"/ValueStateMonday", changed === false ?"Success":"Warning");
+                        }
+                    }
+                    
+                    if (batchesData[next].Time_Tuesday !== null) {
+                        if ((batchesData[next].Time_Tuesday.ms <= batchesData[i].Time_Tuesday.ms)) {
+                            error = true;
+                            messageText = i18nModel.getText("Validate_Charge_Tuesday",[batchesData[next].BatchID]);
+                            oLocalModel.setProperty("/Batches/"+next+"/ValueStateTuesday", "Error");
+                            break;
+                        } else{
+                            var changed = oLocalModel.getProperty("/Batches/"+next+"/Changed_Tuesday");
+                            oLocalModel.setProperty("/Batches/"+next+"/ValueStateTuesday", changed === false ?"Success":"Warning");
+                        }
+                    }
+                    if (batchesData[next].Time_Wednesday !== null) {
+                        if ((batchesData[next].Time_Wednesday.ms <= batchesData[i].Time_Wednesday.ms)) {
+                            error = true;
+                            messageText = i18nModel.getText("Validate_Charge_Wednesday",[batchesData[next].BatchID]);
+                            oLocalModel.setProperty("/Batches/"+next+"/ValueStateWednesday", "Error");
+                            break;
+                        } else{
+                            var changed = oLocalModel.getProperty("/Batches/"+next+"/Changed_Wednesday");
+                            oLocalModel.setProperty("/Batches/"+next+"/ValueStateWednesday", changed === false ?"Success":"Warning");
+                        }
+                    }
+                    if (batchesData[next].Time_Thursday !== null) {
+                        if ((batchesData[next].Time_Thursday.ms <= batchesData[i].Time_Thursday.ms)) {
+                            error = true;
+                            messageText = i18nModel.getText("Validate_Charge_Thursday",[batchesData[next].BatchID]);
+                            oLocalModel.setProperty("/Batches/"+next+"/ValueStateThursday", "Error");
+                            break;
+                        } else{
+                            var changed = oLocalModel.getProperty("/Batches/"+next+"/Changed_Thursday");
+                            oLocalModel.setProperty("/Batches/"+next+"/ValueStateThursday", changed === false ?"Success":"Warning");
+                        }
+                    }
+                    if (batchesData[next].Time_Friday !== null) {
+                        if ((batchesData[next].Time_Friday.ms <= batchesData[i].Time_Friday.ms)) {
+                            error = true;
+                            messageText = i18nModel.getText("Validate_Charge_Friday",[batchesData[next].BatchID]);
+                            oLocalModel.setProperty("/Batches/"+next+"/ValueStateFriday", "Error");
+                            break;
+                        } else{
+                            var changed = oLocalModel.getProperty("/Batches/"+next+"/Changed_Friday");
+                            oLocalModel.setProperty("/Batches/"+next+"/ValueStateFriday", changed === false ?"Success":"Warning");
+                        }
+                    }
+                    if (batchesData[next].Time_Saturday !== null) {
+                        if ((batchesData[next].Time_Saturday.ms <= batchesData[i].Time_Saturday.ms)) {
+                            error = true;
+                            messageText = i18nModel.getText("Validate_Charge_Saturday",[batchesData[next].BatchID]);
+                            oLocalModel.setProperty("/Batches/"+next+"/ValueStateSaturday", "Error");
+                            break;
+                        } else{
+                            var changed = oLocalModel.getProperty("/Batches/"+next+"/Changed_Saturday");
+                            oLocalModel.setProperty("/Batches/"+next+"/ValueStateSaturday", changed === false ?"Success":"Warning");
+                        }
+                    }
+
+                        if (batchesData[next].Time_Sunday !== null) {
+                        if ((batchesData[next].Time_Sunday.ms <= batchesData[i].Time_Sunday.ms)) {
+                            error = true;
+                            messageText = i18nModel.getText("Validate_Charge_Sunday",[batchesData[next].BatchID]);
+                            oLocalModel.setProperty("/Batches/"+next+"/ValueStateSunday", "Error");
+                            break;
+                        } else{
+                            var changed = oLocalModel.getProperty("/Batches/"+next+"/Changed_Sunday");
+                            oLocalModel.setProperty("/Batches/"+next+"/ValueStateSunday", changed === false ?"Success":"Warning");
+                        }
+                    }
+                    if (error) {
+                        break;
+                    }
+                }    
+                
+                if (error) {
+                    MessageToast.show(messageText);
                 }
                 
-                if (batchesData[next].Time_Tuesday !== null) {
-                    if ((batchesData[next].Time_Tuesday.ms <= batchesData[i].Time_Tuesday.ms)) {
-                        error = true;
-                        messageText = i18nModel.getText("Validate_Charge_Tuesday",[batchesData[next].BatchID]);
-                        oLocalModel.setProperty("/Batches/"+next+"/ValueStateTuesday", "Error");
-                        break;
-                    } else{
-                        var changed = oLocalModel.getProperty("/Batches/"+next+"/Changed_Tuesday");
-                        oLocalModel.setProperty("/Batches/"+next+"/ValueStateTuesday", changed === false ?"Success":"Warning");
-                    }
-                }
-                if (batchesData[next].Time_Wednesday !== null) {
-                    if ((batchesData[next].Time_Wednesday.ms <= batchesData[i].Time_Wednesday.ms)) {
-                        error = true;
-                        messageText = i18nModel.getText("Validate_Charge_Wednesday",[batchesData[next].BatchID]);
-                        oLocalModel.setProperty("/Batches/"+next+"/ValueStateWednesday", "Error");
-                        break;
-                    } else{
-                        var changed = oLocalModel.getProperty("/Batches/"+next+"/Changed_Wednesday");
-                        oLocalModel.setProperty("/Batches/"+next+"/ValueStateWednesday", changed === false ?"Success":"Warning");
-                    }
-                }
-                if (batchesData[next].Time_Thursday !== null) {
-                    if ((batchesData[next].Time_Thursday.ms <= batchesData[i].Time_Thursday.ms)) {
-                        error = true;
-                        messageText = i18nModel.getText("Validate_Charge_Thursday",[batchesData[next].BatchID]);
-                        oLocalModel.setProperty("/Batches/"+next+"/ValueStateThursday", "Error");
-                        break;
-                    } else{
-                        var changed = oLocalModel.getProperty("/Batches/"+next+"/Changed_Thursday");
-                        oLocalModel.setProperty("/Batches/"+next+"/ValueStateThursday", changed === false ?"Success":"Warning");
-                    }
-                }
-                if (batchesData[next].Time_Friday !== null) {
-                    if ((batchesData[next].Time_Friday.ms <= batchesData[i].Time_Friday.ms)) {
-                        error = true;
-                        messageText = i18nModel.getText("Validate_Charge_Friday",[batchesData[next].BatchID]);
-                        oLocalModel.setProperty("/Batches/"+next+"/ValueStateFriday", "Error");
-                        break;
-                    } else{
-                        var changed = oLocalModel.getProperty("/Batches/"+next+"/Changed_Friday");
-                        oLocalModel.setProperty("/Batches/"+next+"/ValueStateFriday", changed === false ?"Success":"Warning");
-                    }
-                }
-                if (batchesData[next].Time_Saturday !== null) {
-                    if ((batchesData[next].Time_Saturday.ms <= batchesData[i].Time_Saturday.ms)) {
-                        error = true;
-                        messageText = i18nModel.getText("Validate_Charge_Saturday",[batchesData[next].BatchID]);
-                        oLocalModel.setProperty("/Batches/"+next+"/ValueStateSaturday", "Error");
-                        break;
-                    } else{
-                        var changed = oLocalModel.getProperty("/Batches/"+next+"/Changed_Saturday");
-                        oLocalModel.setProperty("/Batches/"+next+"/ValueStateSaturday", changed === false ?"Success":"Warning");
-                    }
-                }
-
-                    if (batchesData[next].Time_Sunday !== null) {
-                    if ((batchesData[next].Time_Sunday.ms <= batchesData[i].Time_Sunday.ms)) {
-                        error = true;
-                        messageText = i18nModel.getText("Validate_Charge_Sunday",[batchesData[next].BatchID]);
-                        oLocalModel.setProperty("/Batches/"+next+"/ValueStateSunday", "Error");
-                        break;
-                    } else{
-                        var changed = oLocalModel.getProperty("/Batches/"+next+"/Changed_Sunday");
-                        oLocalModel.setProperty("/Batches/"+next+"/ValueStateSunday", changed === false ?"Success":"Warning");
-                    }
-                }
-                if (error) {
-                    break;
-                }
-            }    
-            
-            if (error) {
-				MessageToast.show(messageText);
+                return !error;
             }
-            
-            return !error;
-        }
         });
     });
